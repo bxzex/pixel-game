@@ -1,4 +1,4 @@
-# Pixel Ruins
+# Pixel Game
 
 A pixel-art 2D platform adventure built with plain JavaScript and Canvas.
 
