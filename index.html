@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pixel Ruins: Relic Run</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="game-shell">
+      <header class="topbar">
+        <h1>Pixel Ruins: Relic Run</h1>
+        <button id="audio-button" type="button">Enable Audio</button>
+      </header>
+      <section class="hud" aria-label="Game status">
+        <p>Level <span id="hud-level">1</span>/3</p>
+        <p>Lives <span id="hud-lives">3</span></p>
+        <p>Relics <span id="hud-relics">0/0</span></p>
+        <p>Coins <span id="hud-coins">0</span></p>
+        <p>Time <span id="hud-time">0</span>s</p>
+        <p>Status <span id="hud-status">Explore</span></p>
+      </section>
+      <p class="objective">Objective: <span id="hud-objective">Collect relic shards and reach the portal.</span></p>
+      <canvas id="game" width="640" height="360" aria-label="Pixel game canvas"></canvas>
+      <p class="help">Move: A/D or Arrow Keys. Jump: W, Up, or Space. Collect all relic shards, then enter the portal. Coins raise your final score.</p>
+    </main>
+    <script type="module" src="./src/main.js"></script>
+  </body>
+</html>
