@@ -65,7 +65,7 @@ function buildLevelOne() {
 
   return {
     name: "Sunken Gate",
-    objective: "Collect 3 relic shards. Optional: gather coins for score.",
+    objective: "Collect 3 relic shards, open the chest for the key, then enter the portal.",
     timeLimit: 95,
     requiredRelics: 3,
     start: { x: 3, y: 19 },
@@ -122,7 +122,7 @@ function buildLevelTwo() {
 
   return {
     name: "Verdigris Span",
-    objective: "Collect 4 relic shards. Keep moving before time expires.",
+    objective: "Find 4 relic shards, claim the vault key, and clear the portal before time runs out.",
     timeLimit: 110,
     requiredRelics: 4,
     start: { x: 2, y: 19 },
@@ -185,7 +185,7 @@ function buildLevelThree() {
 
   return {
     name: "Obsidian Crown",
-    objective: "Collect all 5 relic shards, then claim the apex portal.",
+    objective: "Collect all 5 relic shards, unlock the chest key, then take the final portal.",
     timeLimit: 130,
     requiredRelics: 5,
     start: { x: 2, y: 21 },
