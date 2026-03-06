@@ -1,6 +1,6 @@
 import { AudioSystem } from "./audio.js";
 import { LEVELS } from "./levels.js";
-import { ENEMY_ORDER, TILE, SPRITES, drawSprite, drawTile } from "./assets.js";
+import { ATLAS_URL, ENEMY_ORDER, TILE, drawSprite, drawTile } from "./assets.js";
 
 const canvas = document.querySelector("#game");
 const ctx = canvas.getContext("2d");
@@ -18,6 +18,8 @@ const hud = {
 
 const audioButton = document.querySelector("#audio-button");
 const audio = new AudioSystem();
+const atlas = new Image();
+atlas.src = ATLAS_URL;
 
 const keys = new Set();
 const gravity = 930;
@@ -411,40 +413,41 @@ function drawWorld(time) {
     for (let x = startCol; x < endCol; x += 1) {
       const tile = rows[y][x];
       if (tile === 0) continue;
-      drawTile(ctx, tile, x * TILE - state.cameraX, y * TILE, TILE, time);
+      drawTile(ctx, atlas, tile, x * TILE - state.cameraX, y * TILE, TILE, time);
     }
   }
 
   for (const coin of state.level.coins) {
     if (coin.taken) continue;
     const bob = Math.sin(time * 0.006 + coin.x) * 1.5;
-    drawSprite(ctx, SPRITES.coin, coin.x * TILE - state.cameraX, coin.y * TILE + bob, { scale: 2 });
+    drawSprite(ctx, atlas, "coin", coin.x * TILE - state.cameraX, coin.y * TILE + bob, { scale: 2 });
   }
 
   for (const relic of state.level.relics) {
     if (relic.taken) continue;
     const bob = Math.sin(time * 0.004 + relic.x * 0.4) * 1.8;
-    drawSprite(ctx, SPRITES.relic, relic.x * TILE - state.cameraX, relic.y * TILE + bob, { scale: 2 });
+    drawSprite(ctx, atlas, "relic", relic.x * TILE - state.cameraX, relic.y * TILE + bob, { scale: 2 });
   }
 
   drawSprite(
     ctx,
-    state.hasLevelKey ? SPRITES.chestOpen : SPRITES.chestClosed,
+    atlas,
+    state.hasLevelKey ? "chestOpen" : "chestClosed",
     state.level.chest.x * TILE - state.cameraX,
     state.level.chest.y * TILE,
     { scale: 2 },
   );
 
   if (state.hasLevelKey) {
-    drawSprite(ctx, SPRITES.key, state.level.chest.x * TILE - state.cameraX + 18, state.level.chest.y * TILE - 10, {
+    drawSprite(ctx, atlas, "key", state.level.chest.x * TILE - state.cameraX + 18, state.level.chest.y * TILE - 10, {
       scale: 1,
       alpha: 0.85,
     });
   }
 
   for (const enemy of state.level.enemies) {
-    const sprite = SPRITES[enemy.kind] ?? SPRITES.goblin;
-    drawSprite(ctx, sprite, enemy.x - state.cameraX, enemy.y * TILE - 1, {
+    const sprite = ENEMY_ORDER.includes(enemy.kind) ? enemy.kind : "goblin";
+    drawSprite(ctx, atlas, sprite, enemy.x - state.cameraX, enemy.y * TILE - 1, {
       scale: 2,
       flipX: enemy.dir < 0,
     });
@@ -452,14 +455,15 @@ function drawWorld(time) {
 
   drawSprite(
     ctx,
-    state.hasLevelKey ? SPRITES.portalOpen : SPRITES.portalLocked,
+    atlas,
+    state.hasLevelKey ? "portalOpen" : "portalLocked",
     state.level.portal.x * TILE - state.cameraX,
     state.level.portal.y * TILE,
     { scale: 2 },
   );
 
   if (!(state.player.invulnTimer > 0.1 && Math.floor(state.player.invulnTimer * 16) % 2 === 0)) {
-    drawSprite(ctx, SPRITES.hero, state.player.x - state.cameraX, state.player.y, {
+    drawSprite(ctx, atlas, "hero", state.player.x - state.cameraX, state.player.y, {
       scale: 2,
       flipX: state.playerFacing < 0,
     });
@@ -468,7 +472,7 @@ function drawWorld(time) {
 
 function drawOverlay() {
   for (let i = 0; i < state.lives; i += 1) {
-    drawSprite(ctx, SPRITES.heart, 10 + i * 18, 8, { scale: 1 });
+    drawSprite(ctx, atlas, "heart", 10 + i * 18, 8, { scale: 1 });
   }
 
   if (state.gameWon) {

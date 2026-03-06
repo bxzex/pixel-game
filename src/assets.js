@@ -1,182 +1,115 @@
 export const TILE = 16;
-
-function spriteFromRows(rows) {
-  return rows.map((row) => row.split(""));
-}
+export const ATLAS_URL = "./assets/fantasy-atlas.png";
 
 export const ENEMY_ORDER = ["slime", "goblin", "skeleton", "bat"];
 
-export const PALETTE = {
-  ".": null,
-  "A": "#0f172a",
-  "B": "#1e293b",
-  "C": "#334155",
-  "D": "#64748b",
-  "E": "#94a3b8",
-  "F": "#f8fafc",
-  "G": "#14532d",
-  "H": "#166534",
-  "I": "#22c55e",
-  "J": "#bbf7d0",
-  "K": "#7c2d12",
-  "L": "#b45309",
-  "M": "#f59e0b",
-  "N": "#fcd34d",
-  "O": "#7f1d1d",
-  "P": "#dc2626",
-  "Q": "#fca5a5",
-  "R": "#1d4ed8",
-  "S": "#60a5fa",
-  "T": "#bfdbfe",
-  "U": "#4c1d95",
-  "V": "#8b5cf6",
-  "W": "#c4b5fd",
-  "X": "#78350f",
-  "Y": "#ca8a04",
-  "Z": "#fde047",
+// Coordinates for the uploaded 2816x1536 atlas.
+const RECTS = {
+  hero: { x: 608, y: 130, w: 96, h: 122 },
+  slime: { x: 90, y: 520, w: 88, h: 90 },
+  goblin: { x: 262, y: 500, w: 92, h: 126 },
+  skeleton: { x: 612, y: 502, w: 90, h: 126 },
+  bat: { x: 780, y: 516, w: 114, h: 100 },
+
+  coin: { x: 2190, y: 134, w: 88, h: 90 },
+  relic: { x: 2462, y: 808, w: 88, h: 96 },
+  key: { x: 2625, y: 126, w: 88, h: 96 },
+  chestClosed: { x: 2008, y: 130, w: 122, h: 102 },
+  chestOpen: { x: 1847, y: 130, w: 122, h: 102 },
+  portalLocked: { x: 2630, y: 806, w: 116, h: 126 },
+  portalOpen: { x: 2462, y: 806, w: 88, h: 96 },
+  heart: { x: 2466, y: 318, w: 84, h: 86 },
+
+  tileStone: { x: 1306, y: 122, w: 156, h: 156 },
+  tileGround: { x: 970, y: 122, w: 156, h: 156 },
+  tileWood: { x: 969, y: 290, w: 156, h: 156 },
+  tileSpikes: { x: 1298, y: 801, w: 156, h: 122 },
+  tileBounce: { x: 1468, y: 804, w: 156, h: 122 },
+  tileWater: { x: 1468, y: 122, w: 156, h: 156 },
+  tileWaterAlt: { x: 1128, y: 291, w: 156, h: 156 },
 };
 
-export const SPRITES = {
-  hero: spriteFromRows([
-    "..FF....",
-    ".FQQF...",
-    ".FRRF...",
-    "FRRRRF..",
-    "FRFFRF..",
-    "KFHHRFK.",
-    "KXK..KX.",
-    ".X....X.",
-  ]),
-  slime: spriteFromRows([
-    "........",
-    "..IIII..",
-    ".IJJJJI.",
-    "IJIIIIJI",
-    "IJIAAIJI",
-    "IIJIIJII",
-    ".IIIIII.",
-    "........",
-  ]),
-  goblin: spriteFromRows([
-    "..HH....",
-    ".HJJH...",
-    ".HIIH...",
-    "HIHHIH..",
-    "HIFFIH..",
-    "KHIIHK..",
-    "KXK..XK.",
-    ".X....X.",
-  ]),
-  skeleton: spriteFromRows([
-    "..FF....",
-    ".FDD F..",
-    ".FFFF...",
-    "FDFFDF..",
-    "FDFFDF..",
-    "XFFFFX..",
-    "X.X..X..",
-    ".X....X.",
-  ].map((row) => row.replace(/ /g, "."))),
-  bat: spriteFromRows([
-    "V......V",
-    ".VV..VV.",
-    "..VFFV..",
-    ".VVVVVV.",
-    "V.VVVV.V",
-    "..V..V..",
-    "........",
-    "........",
-  ]),
-  coin: spriteFromRows([
-    "..YYYY..",
-    ".YZZZZY.",
-    "YZYYYYZY",
-    "YZYZZYZY",
-    "YZYZZYZY",
-    "YZYYYYZY",
-    ".YZZZZY.",
-    "..YYYY..",
-  ]),
-  relic: spriteFromRows([
-    "...V....",
-    "..VVV...",
-    ".VVWVV..",
-    "VVWWWVV.",
-    ".VVWVV..",
-    "..VVV...",
-    "...V....",
-    "........",
-  ]),
-  key: spriteFromRows([
-    "..YYYY..",
-    ".Y....Y.",
-    ".Y....Y.",
-    "..YYYY..",
-    "....Y...",
-    "..YYY...",
-    "..Y.....",
-    "........",
-  ]),
-  chestClosed: spriteFromRows([
-    "XXXXXXXX",
-    "XNNNNNNX",
-    "XLLLLLLX",
-    "XLYYYYLX",
-    "XLYFFYLX",
-    "XLLLLLLX",
-    "XKKKKKKX",
-    "........",
-  ]),
-  chestOpen: spriteFromRows([
-    "XXXXXXXX",
-    "XNNNNNNX",
-    "X......X",
-    "XLLLLLLX",
-    "XLYYYYLX",
-    "XLLLLLLX",
-    "XKKKKKKX",
-    "........",
-  ]),
-  portalLocked: spriteFromRows([
-    "..UUUU..",
-    ".UAAAAU.",
-    "UAUAAUAU",
-    "UAUAAUAU",
-    "UAUAAUAU",
-    "UAUAAUAU",
-    ".UAAAAU.",
-    "..UUUU..",
-  ]),
-  portalOpen: spriteFromRows([
-    "..UUUU..",
-    ".UVVVVU.",
-    "UVWWWWVU",
-    "UVWVVWVU",
-    "UVWVVWVU",
-    "UVWWWWVU",
-    ".UVVVVU.",
-    "..UUUU..",
-  ]),
-  heart: spriteFromRows([
-    "PP..PP..",
-    "PPPPPP..",
-    "PPPPPP..",
-    ".PPPP...",
-    "..PP....",
-    "........",
-    "........",
-    "........",
-  ]),
-};
+function drawFallbackSprite(ctx, name, x, y, scale = 2) {
+  ctx.fillStyle = "#0f172a";
+  ctx.fillRect(x, y, 8 * scale, 8 * scale);
 
-export function drawSprite(ctx, sprite, x, y, options = {}) {
+  const color =
+    name === "hero"
+      ? "#60a5fa"
+      : name === "slime"
+        ? "#22c55e"
+        : name === "goblin"
+          ? "#84cc16"
+          : name === "skeleton"
+            ? "#e5e7eb"
+            : name === "bat"
+              ? "#a855f7"
+              : name === "coin"
+                ? "#facc15"
+                : name === "relic"
+                  ? "#c084fc"
+                  : name === "heart"
+                    ? "#ef4444"
+                    : "#38bdf8";
+
+  ctx.fillStyle = color;
+  ctx.fillRect(x + scale, y + scale, 6 * scale, 6 * scale);
+}
+
+function drawFallbackTile(ctx, type, x, y, size = TILE, time = 0) {
+  if (type === 1) {
+    ctx.fillStyle = "#6b7280";
+    ctx.fillRect(x, y, size, size);
+    return;
+  }
+  if (type === 2) {
+    ctx.fillStyle = "#8b5a2b";
+    ctx.fillRect(x, y, size, size);
+    ctx.fillStyle = "#4ade80";
+    ctx.fillRect(x, y, size, 5);
+    return;
+  }
+  if (type === 3) {
+    ctx.fillStyle = "#a16207";
+    ctx.fillRect(x, y, size, size);
+    return;
+  }
+  if (type === 4) {
+    ctx.fillStyle = "#d1d5db";
+    ctx.fillRect(x, y + 8, size, 8);
+    return;
+  }
+  if (type === 5) {
+    ctx.fillStyle = "#06b6d4";
+    ctx.fillRect(x, y, size, size);
+    return;
+  }
+  if (type === 6) {
+    const phase = Math.sin(time * 0.01 + x * 0.05);
+    ctx.fillStyle = "#2563eb";
+    ctx.fillRect(x, y, size, size);
+    ctx.fillStyle = "#93c5fd";
+    ctx.fillRect(x, y + 6 + phase, size, 3);
+  }
+}
+
+export function drawSprite(ctx, atlas, name, x, y, options = {}) {
   const scale = options.scale ?? 2;
   const flipX = Boolean(options.flipX);
   const alpha = options.alpha ?? 1;
-  const width = sprite[0].length * scale;
+  const rect = RECTS[name];
+
+  if (!atlas || !atlas.complete || !rect) {
+    drawFallbackSprite(ctx, name, x, y, scale);
+    return;
+  }
+
+  const width = 8 * scale;
+  const height = 8 * scale;
 
   ctx.save();
   ctx.globalAlpha = alpha;
+
   if (flipX) {
     ctx.translate(x + width, y);
     ctx.scale(-1, 1);
@@ -184,87 +117,27 @@ export function drawSprite(ctx, sprite, x, y, options = {}) {
     y = 0;
   }
 
-  for (let sy = 0; sy < sprite.length; sy += 1) {
-    for (let sx = 0; sx < sprite[sy].length; sx += 1) {
-      const pixel = sprite[sy][sx];
-      const color = PALETTE[pixel];
-      if (!color) continue;
-      ctx.fillStyle = color;
-      ctx.fillRect(x + sx * scale, y + sy * scale, scale, scale);
-    }
-  }
-
+  ctx.drawImage(atlas, rect.x, rect.y, rect.w, rect.h, x, y, width, height);
   ctx.restore();
 }
 
-export function drawTile(ctx, type, x, y, size = TILE, time = 0) {
-  if (type === 1) {
-    ctx.fillStyle = "#5f6876";
-    ctx.fillRect(x, y, size, size);
-    ctx.fillStyle = "#7b8799";
-    ctx.fillRect(x + 1, y + 1, size - 2, size - 2);
-    ctx.fillStyle = "#4a5568";
-    ctx.fillRect(x + 2, y + 3, size - 6, 3);
-    ctx.fillRect(x + 4, y + 9, size - 8, 3);
+export function drawTile(ctx, atlas, type, x, y, size = TILE, time = 0) {
+  if (!atlas || !atlas.complete) {
+    drawFallbackTile(ctx, type, x, y, size, time);
     return;
   }
 
-  if (type === 2) {
-    ctx.fillStyle = "#8b5a2b";
-    ctx.fillRect(x, y, size, size);
-    ctx.fillStyle = "#6f4522";
-    ctx.fillRect(x + 2, y + 6, size - 4, size - 8);
-    ctx.fillStyle = "#5cb85c";
-    ctx.fillRect(x, y, size, 5);
-    ctx.fillStyle = "#7ad67a";
-    ctx.fillRect(x + 2, y + 1, size - 6, 2);
-    return;
+  let rect = null;
+  if (type === 1) rect = RECTS.tileStone;
+  else if (type === 2) rect = RECTS.tileGround;
+  else if (type === 3) rect = RECTS.tileWood;
+  else if (type === 4) rect = RECTS.tileSpikes;
+  else if (type === 5) rect = RECTS.tileBounce;
+  else if (type === 6) {
+    const waterAlt = Math.floor(time / 260) % 2 === 0;
+    rect = waterAlt ? RECTS.tileWater : RECTS.tileWaterAlt;
   }
 
-  if (type === 3) {
-    ctx.fillStyle = "#8c5a34";
-    ctx.fillRect(x, y, size, size);
-    ctx.fillStyle = "#a36a3e";
-    ctx.fillRect(x, y + 2, size, 3);
-    ctx.fillRect(x, y + 8, size, 3);
-    ctx.fillStyle = "#5f3c22";
-    ctx.fillRect(x + 4, y, 2, size);
-    ctx.fillRect(x + 10, y, 2, size);
-    return;
-  }
-
-  if (type === 4) {
-    ctx.fillStyle = "#5f6876";
-    ctx.fillRect(x, y + 8, size, 8);
-    ctx.fillStyle = "#d0d7e2";
-    for (let i = 0; i < 4; i += 1) {
-      const px = x + i * 4;
-      ctx.beginPath();
-      ctx.moveTo(px, y + 16);
-      ctx.lineTo(px + 2, y + 6);
-      ctx.lineTo(px + 4, y + 16);
-      ctx.fill();
-    }
-    return;
-  }
-
-  if (type === 5) {
-    ctx.fillStyle = "#374151";
-    ctx.fillRect(x, y, size, size);
-    ctx.fillStyle = "#22d3ee";
-    ctx.fillRect(x + 2, y + 3, size - 4, 5);
-    ctx.fillStyle = "#0891b2";
-    ctx.fillRect(x + 3, y + 9, size - 6, 4);
-    return;
-  }
-
-  if (type === 6) {
-    const phase = Math.sin(time * 0.01 + x * 0.05);
-    ctx.fillStyle = "#1d4ed8";
-    ctx.fillRect(x, y, size, size);
-    ctx.fillStyle = "#60a5fa";
-    ctx.fillRect(x, y + 5 + phase, size, 4);
-    ctx.fillStyle = "#93c5fd";
-    ctx.fillRect(x, y + 10 + phase, size, 3);
-  }
+  if (!rect) return;
+  ctx.drawImage(atlas, rect.x, rect.y, rect.w, rect.h, x, y, size, size);
 }
