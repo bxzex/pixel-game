@@ -29,5 +29,5 @@ createServer(async (req, res) => {
   }
 }).listen(port, () => {
   // eslint-disable-next-line no-console
-  console.log(`Pixel Game running at http://localhost:${port}`);
+  console.log(`Pixel Game dev server running on port ${port}`);
 });
