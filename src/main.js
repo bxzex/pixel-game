@@ -1,6 +1,6 @@
 import { AudioSystem } from "./audio.js?v=20260307clean";
 import { LEVELS } from "./levels.js?v=20260307clean";
-import { ATLAS_URL, NEW_ATLAS_URL, TILE, TILE_COLLISION, drawAsset, drawTile } from "./assets.js?v=20260307clean";
+import { ATLAS_URL, TILE, TILE_COLLISION, drawAsset, drawTile } from "./assets.js?v=20260307clean";
 import { createExplosion, updateParticles, drawParticles, particles } from "./effects.js";
 
 const canvas = document.querySelector("#game");
@@ -21,11 +21,6 @@ if (help) {
 const audio = new AudioSystem();
 const atlas = new Image();
 atlas.src = ATLAS_URL;
-
-const newAtlas = new Image();
-newAtlas.src = NEW_ATLAS_URL;
-let useNewAtlas = false;
-newAtlas.onload = () => { useNewAtlas = true; };
 
 const keys = new Set();
 const moveSpeed = 92;
@@ -526,10 +521,9 @@ function drawMap(time) {
 }
 
 function drawProps(layer, time) {
-  const currentAtlas = useNewAtlas ? newAtlas : atlas;
   for (const item of state.level.props) {
     if ((item.layer ?? "back") !== layer) continue;
-    drawAsset(ctx, currentAtlas, item.name, item.x * TILE - state.cameraX, item.y * TILE - state.cameraY, {
+    drawAsset(ctx, atlas, item.name, item.x * TILE - state.cameraX, item.y * TILE - state.cameraY, {
       width: item.width * TILE,
       height: item.height * TILE,
       flipX: item.flipX,
@@ -539,9 +533,8 @@ function drawProps(layer, time) {
 }
 
 function drawCharacters(time) {
-  const currentAtlas = useNewAtlas ? newAtlas : atlas;
   for (const npc of state.level.npcs) {
-    drawAsset(ctx, currentAtlas, npc.kind, npc.x * TILE - state.cameraX - 6, npc.y * TILE - state.cameraY - 10, {
+    drawAsset(ctx, atlas, npc.kind, npc.x * TILE - state.cameraX - 6, npc.y * TILE - state.cameraY - 10, {
       width: npc.kind === "cat" ? 24 : 30,
       height: npc.kind === "cat" ? 20 : 30,
       frameIndex: Math.floor(time / 400),
@@ -549,7 +542,7 @@ function drawCharacters(time) {
   }
 
   for (const enemy of state.level.enemies) {
-    drawAsset(ctx, currentAtlas, enemy.kind, enemy.x * TILE - state.cameraX - 4, enemy.y * TILE - state.cameraY - 8, {
+    drawAsset(ctx, atlas, enemy.kind, enemy.x * TILE - state.cameraX - 4, enemy.y * TILE - state.cameraY - 8, {
       width: enemy.kind === "bat" ? 30 : 28,
       height: enemy.kind === "bat" ? 24 : 28,
       flipX: enemy.axis === "x" ? enemy.dir < 0 : false,
@@ -566,7 +559,7 @@ function drawCharacters(time) {
   const heroFlip = state.facing === "left";
 
   if (!(state.player.invulnTimer > 0.1 && Math.floor(state.player.invulnTimer * 14) % 2 === 0)) {
-    drawAsset(ctx, currentAtlas, heroAsset, state.player.x - state.cameraX - 8, state.player.y - state.cameraY - 12, {
+    drawAsset(ctx, atlas, heroAsset, state.player.x - state.cameraX - 8, state.player.y - state.cameraY - 12, {
       width: 32,
       height: 32,
       flipX: heroFlip,
@@ -576,7 +569,6 @@ function drawCharacters(time) {
 }
 
 function drawPickups(time) {
-  const currentAtlas = useNewAtlas ? newAtlas : atlas;
   for (const group of [state.level.coins, state.level.bonuses, state.level.relics]) {
     for (const item of group) {
       if (item.taken) continue;
@@ -611,8 +603,6 @@ function drawPickups(time) {
 }
 
 function drawUi() {
-  const currentAtlas = useNewAtlas ? newAtlas : atlas;
-  
   // Background for HUD area
   ctx.fillStyle = "rgba(0, 0, 0, 0.4)";
   ctx.fillRect(0, 0, canvas.width, 40);
@@ -622,7 +612,7 @@ function drawUi() {
 
   // Lives (Hearts)
   for (let i = 0; i < playerMaxLives; i += 1) {
-    drawAsset(ctx, currentAtlas, i < state.lives ? "uiIconHeart" : "heartEmpty", 10 + i * 24, 8, {
+    drawAsset(ctx, atlas, i < state.lives ? "uiIconHeart" : "heartEmpty", 10 + i * 24, 8, {
       width: 24,
       height: 24,
     });
@@ -634,15 +624,15 @@ function drawUi() {
   ctx.textAlign = "left";
 
   // Coins
-  drawAsset(ctx, currentAtlas, "uiIconCoin", 150, 8, { width: 24, height: 24 });
+  drawAsset(ctx, atlas, "uiIconCoin", 150, 8, { width: 24, height: 24 });
   ctx.fillText(String(state.totalCoins), 178, 25);
 
   // Relics
-  drawAsset(ctx, currentAtlas, "uiIconSwords", 230, 8, { width: 24, height: 24 });
+  drawAsset(ctx, atlas, "uiIconSwords", 230, 8, { width: 24, height: 24 });
   ctx.fillText(`${state.levelRelics}/${state.level.requiredRelics}`, 258, 25);
 
   // Time
-  drawAsset(ctx, currentAtlas, "uiIconDrop", 320, 8, { width: 24, height: 24 });
+  drawAsset(ctx, atlas, "uiIconDrop", 320, 8, { width: 24, height: 24 });
   ctx.fillText(`${Math.ceil(Math.max(0, state.timeLeft))}s`, 348, 25);
 
   // Level & Status
