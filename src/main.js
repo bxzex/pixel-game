@@ -1,7 +1,7 @@
 import { AudioSystem } from "./audio.js?v=20260307clean";
 import { LEVELS } from "./levels.js?v=20260307clean";
 import { ATLAS_URL, NEW_ATLAS_URL, TILE, TILE_COLLISION, drawAsset, drawTile } from "./assets.js?v=20260307clean";
-import { createExplosion, updateParticles, drawParticles } from "./effects.js";
+import { createExplosion, updateParticles, drawParticles, particles } from "./effects.js";
 
 const canvas = document.querySelector("#game");
 const ctx = canvas.getContext("2d");
