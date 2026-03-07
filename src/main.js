@@ -48,6 +48,7 @@ const state = {
   lives: 3,
   status: "Explore",
   gameWon: false,
+  inMenu: true,
   audioReady: false,
   level: null,
   hasLevelKey: false,
@@ -70,6 +71,24 @@ const state = {
   cameraX: 0,
   cameraY: 0,
 };
+
+const menuOverlay = document.querySelector("#game-menu");
+const startBtn = document.querySelector("#start-btn");
+
+if (startBtn) {
+  startBtn.addEventListener("click", () => {
+    state.inMenu = false;
+    if (menuOverlay) menuOverlay.style.display = "none";
+    enableAudioOnce();
+  });
+}
+
+const creditsBtn = document.querySelector("#credits-btn");
+if (creditsBtn) {
+  creditsBtn.addEventListener("click", () => {
+    alert("Pixel Quest - Created by bxzex");
+  });
+}
 
 function cloneLevel(index) {
   const source = LEVELS[index];
@@ -646,7 +665,7 @@ function gameLoop(time) {
   const dt = Math.min((time - gameLoop.lastTime) / 1000, 0.033);
   gameLoop.lastTime = time;
 
-  if (!state.gameWon) {
+  if (!state.inMenu && !state.gameWon) {
     updatePlayer(dt);
     updateEnemies(dt);
     updateInteractions();
@@ -655,7 +674,9 @@ function gameLoop(time) {
     updateParticles(dt);
   }
 
-  render(time);
+  if (!state.inMenu) {
+    render(time);
+  }
   requestAnimationFrame(gameLoop);
 }
 
