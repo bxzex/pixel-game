@@ -1,27 +1,10 @@
-function createMap(width, height) {
-  return Array.from({ length: height }, () => Array(width).fill(0));
+import { TILE_TYPES } from "./assets.js";
+
+function createMap(width, height, fill = TILE_TYPES.GRASS) {
+  return Array.from({ length: height }, () => Array(width).fill(fill));
 }
 
-function toRows(map) {
-  return map.map((row) => row.join(""));
-}
-
-function fillGround(map, topY, startX = 0, endX = map[0].length - 1, topTile = 2, fillTile = 1) {
-  for (let x = startX; x <= endX; x += 1) {
-    map[topY][x] = topTile;
-    for (let y = topY + 1; y < map.length; y += 1) {
-      map[y][x] = fillTile;
-    }
-  }
-}
-
-function addPlatform(map, x, y, length, tile = 3) {
-  for (let i = 0; i < length; i += 1) {
-    map[y][x + i] = tile;
-  }
-}
-
-function addSolidRect(map, x, y, width, height, tile = 5) {
+function paintRect(map, x, y, width, height, tile) {
   for (let py = y; py < y + height; py += 1) {
     for (let px = x; px < x + width; px += 1) {
       map[py][px] = tile;
@@ -29,269 +12,305 @@ function addSolidRect(map, x, y, width, height, tile = 5) {
   }
 }
 
-function addWater(map, startX, width, topY) {
-  for (let x = startX; x < startX + width; x += 1) {
-    for (let y = topY; y < map.length; y += 1) {
-      map[y][x] = 6;
-    }
+function paintHLine(map, x, y, length, tile) {
+  for (let px = x; px < x + length; px += 1) {
+    map[y][px] = tile;
   }
 }
 
-function addSpikeStrip(map, x, y, length) {
-  for (let i = 0; i < length; i += 1) {
-    map[y][x + i] = 4;
+function paintVLine(map, x, y, length, tile) {
+  for (let py = y; py < y + length; py += 1) {
+    map[py][x] = tile;
   }
 }
 
-function prop(name, x, y, width, height, flipX = false) {
-  return { name, x, y, width, height, flipX };
+function toRows(map) {
+  return map.map((row) => row.join(""));
 }
 
-function pickup(name, x, y, effect, value = 0) {
-  return { name, x, y, effect, value };
+function rect(x, y, w, h) {
+  return { x, y, w, h };
 }
 
-function npc(name, x, y) {
-  return { name, x, y };
+function prop(name, x, y, width, height, layer = "back", flipX = false) {
+  return { name, x, y, width, height, layer, flipX };
 }
 
-function buildOakheartHamlet() {
-  const width = 96;
-  const height = 28;
-  const groundY = 23;
-  const map = createMap(width, height);
+function item(kind, x, y, effect = "score", value = 0) {
+  return { kind, x, y, effect, value };
+}
 
-  fillGround(map, groundY);
-  addWater(map, 34, 6, groundY);
-  addPlatform(map, 33, 20, 8, 7);
-  addPlatform(map, 12, 19, 8, 3);
-  addPlatform(map, 22, 17, 7, 3);
-  addPlatform(map, 46, 18, 9, 3);
-  addPlatform(map, 62, 16, 8, 3);
-  addPlatform(map, 74, 14, 8, 3);
-  addSpikeStrip(map, 58, 22, 3);
-  addSpikeStrip(map, 86, 22, 3);
+function npc(kind, x, y, message) {
+  return { kind, x, y, message };
+}
+
+function enemy(kind, x, y, axis, min, max, speed) {
+  return { kind, x, y, axis, min, max, speed };
+}
+
+function buildVillage() {
+  const map = createMap(52, 30);
+  paintRect(map, 0, 0, 52, 30, TILE_TYPES.GRASS);
+  paintRect(map, 0, 20, 52, 10, TILE_TYPES.DIRT);
+  paintRect(map, 6, 10, 12, 9, TILE_TYPES.DIRT);
+  paintRect(map, 19, 8, 11, 11, TILE_TYPES.STONE);
+  paintRect(map, 33, 7, 14, 12, TILE_TYPES.DIRT);
+  paintRect(map, 14, 22, 24, 3, TILE_TYPES.STONE);
+  paintRect(map, 39, 14, 7, 5, TILE_TYPES.WATER);
+  paintRect(map, 0, 0, 1, 30, TILE_TYPES.BRICK);
+  paintRect(map, 51, 0, 1, 30, TILE_TYPES.BRICK);
+  paintRect(map, 0, 0, 52, 1, TILE_TYPES.BRICK);
+  paintRect(map, 0, 29, 52, 1, TILE_TYPES.BRICK);
+  paintRect(map, 40, 18, 5, 2, TILE_TYPES.BRIDGE);
+  paintRect(map, 9, 5, 3, 3, TILE_TYPES.FLOWERS);
+  paintRect(map, 29, 21, 4, 2, TILE_TYPES.FLOWERS);
 
   return {
-    name: "Oakheart Hamlet",
-    objective: "Recover the village relics, take the chest key, and reach the gate beyond the smithy.",
-    timeLimit: 115,
+    name: "Oakheart Village",
+    objective: "Speak to the elder, gather the village relics, open the chest, then unlock the east gate.",
+    timeLimit: 150,
     requiredRelics: 3,
-    start: { x: 4, y: 21 },
-    chest: { x: 83, y: 19 },
-    portal: { x: 90, y: 19 },
+    start: { x: 5, y: 23 },
+    chest: { x: 27, y: 10 },
+    door: { x: 47, y: 11 },
     map: toRows(map),
-    relics: [
-      { x: 15, y: 18, kind: "gemPurple" },
-      { x: 51, y: 17, kind: "map" },
-      { x: 76, y: 13, kind: "gemBlue" },
+    blockers: [
+      rect(3, 15, 7, 8),
+      rect(11, 15, 7, 8),
+      rect(34, 12, 9, 10),
+      rect(44, 12, 8, 10),
+      rect(21, 12, 4, 7),
+      rect(30, 5, 2, 8),
+      rect(36, 5, 2, 8),
+      rect(8, 5, 2, 9),
+      rect(13, 5, 2, 9),
     ],
-    coins: [
-      { x: 10, y: 22, kind: "coinGold" },
-      { x: 18, y: 18, kind: "coinSilver" },
-      { x: 27, y: 16, kind: "coinGold" },
-      { x: 49, y: 17, kind: "coinSilver" },
-      { x: 67, y: 15, kind: "coinGold" },
-      { x: 80, y: 13, kind: "coinGold" },
-    ],
-    bonuses: [
-      pickup("apple", 8, 22, "score", 35),
-      pickup("apple", 20, 18, "score", 35),
-      pickup("potionBlue", 38, 19, "time", 12),
-      pickup("lantern", 70, 15, "score", 60),
-      pickup("potionRed", 85, 18, "heal", 1),
+    hazards: [],
+    npcs: [
+      npc("elder", 6, 24, "The relics are scattered across the village."),
+      npc("maiden", 16, 24, "The chest near the plaza holds the gate key."),
+      npc("wizard", 37, 23, "Drink blue potions when time gets tight."),
+      npc("villager", 43, 23, "The road east leads to the forest."),
+      npc("cat", 24, 19, "The cat guards the plaza."),
     ],
     enemies: [
-      { kind: "slime", x: 25, y: 22, minX: 20, maxX: 31, speed: 2.1 },
-      { kind: "goblin", x: 56, y: 22, minX: 52, maxX: 65, speed: 2.7 },
-      { kind: "bat", x: 78, y: 12, minX: 75, maxX: 88, speed: 2.6 },
+      enemy("slime", 31, 24, "x", 28, 36, 1.8),
+      enemy("goblin", 41, 22, "y", 20, 25, 2.1),
     ],
-    backProps: [
-      prop("houseA", 2, 15, 8, 8),
-      prop("houseB", 11, 15, 8, 8),
-      prop("roundTree", 29, 16, 7, 8),
-      prop("roundTree", 41, 16, 7, 8),
-      prop("pineTree", 58, 15, 6, 8),
-      prop("hillTree", 66, 15, 6, 8),
-      prop("towerA", 72, 14, 8, 9),
-      prop("smithy", 82, 15, 10, 8),
+    relics: [
+      item("map", 12, 7),
+      item("compass", 24, 15),
+      item("gemPurple", 42, 9),
     ],
-    frontProps: [
-      prop("fence", 9, 21, 4, 3),
-      prop("fence", 13, 21, 4, 3),
-      prop("flowers", 6, 22, 3, 2),
-      prop("bush", 31, 21, 3, 2),
-      prop("rockMedium", 43, 22, 3, 2),
-      prop("flowers", 60, 22, 3, 2),
-      prop("rockLarge", 73, 22, 3, 2),
+    coins: [
+      item("coinGold", 8, 22),
+      item("coinSilver", 14, 11),
+      item("coinGold", 22, 22),
+      item("coinSilver", 30, 15),
+      item("coinGold", 38, 22),
+      item("coinSilver", 44, 9),
     ],
-    npcs: [
-      npc("elder", 7, 21),
-      npc("maiden", 16, 21),
-      npc("wizard", 86, 21),
+    bonuses: [
+      item("apple", 10, 24, "score", 25),
+      item("apple", 13, 24, "score", 25),
+      item("potionBlue", 35, 23, "time", 18),
+      item("potionRed", 25, 10, "heal", 1),
+      item("lantern", 19, 24, "score", 60),
+    ],
+    props: [
+      prop("houseA", 2, 14, 8, 9),
+      prop("houseB", 10, 14, 8, 9),
+      prop("towerA", 20, 11, 5, 9),
+      prop("roundTree", 4, 5, 5, 7),
+      prop("roundTree", 12, 5, 5, 7),
+      prop("palmTree", 37, 4, 5, 9),
+      prop("smithy", 33, 11, 10, 9),
+      prop("workshop", 43, 11, 9, 9),
+      prop("fence", 5, 21, 3, 3, "front"),
+      prop("fence", 8, 21, 3, 3, "front"),
+      prop("rockSmall", 28, 23, 2, 2, "front"),
+      prop("flowers", 18, 23, 3, 2, "front"),
+      prop("bush", 39, 23, 3, 2, "front"),
     ],
   };
 }
 
-function buildGreenriverWilds() {
-  const width = 106;
-  const height = 30;
-  const groundY = 24;
-  const map = createMap(width, height);
-
-  fillGround(map, groundY);
-  addWater(map, 24, 8, groundY);
-  addWater(map, 62, 10, groundY);
-  addPlatform(map, 23, 20, 10, 7);
-  addPlatform(map, 61, 18, 12, 7);
-  addPlatform(map, 10, 18, 8, 3);
-  addPlatform(map, 38, 17, 8, 3);
-  addPlatform(map, 48, 14, 7, 3);
-  addPlatform(map, 74, 15, 8, 3);
-  addPlatform(map, 88, 12, 7, 3);
-  addSpikeStrip(map, 54, 23, 4);
-  addSpikeStrip(map, 98, 23, 3);
+function buildForest() {
+  const map = createMap(56, 32);
+  paintRect(map, 0, 0, 56, 32, TILE_TYPES.GRASS);
+  paintRect(map, 0, 24, 56, 8, TILE_TYPES.DIRT);
+  paintRect(map, 18, 0, 8, 32, TILE_TYPES.WATER);
+  paintRect(map, 18, 11, 8, 3, TILE_TYPES.BRIDGE);
+  paintRect(map, 18, 21, 8, 3, TILE_TYPES.BRIDGE);
+  paintRect(map, 29, 8, 10, 3, TILE_TYPES.STONE);
+  paintRect(map, 34, 15, 11, 3, TILE_TYPES.STONE);
+  paintRect(map, 41, 7, 10, 10, TILE_TYPES.DIRT);
+  paintRect(map, 0, 0, 1, 32, TILE_TYPES.BRICK);
+  paintRect(map, 55, 0, 1, 32, TILE_TYPES.BRICK);
+  paintRect(map, 0, 0, 56, 1, TILE_TYPES.BRICK);
+  paintRect(map, 0, 31, 56, 1, TILE_TYPES.BRICK);
+  paintHLine(map, 5, 7, 7, TILE_TYPES.FLOWERS);
+  paintHLine(map, 43, 25, 6, TILE_TYPES.FLOWERS);
 
   return {
-    name: "Greenriver Wilds",
-    objective: "Cross the forest bridges, gather the relics hidden in the wilds, and unlock the gate in the ruins.",
-    timeLimit: 125,
+    name: "Greenriver Forest",
+    objective: "Cross the river bridges, recover the forest relics, and unlock the keep road.",
+    timeLimit: 165,
     requiredRelics: 4,
-    start: { x: 3, y: 22 },
-    chest: { x: 95, y: 20 },
-    portal: { x: 100, y: 19 },
+    start: { x: 4, y: 26 },
+    chest: { x: 46, y: 10 },
+    door: { x: 52, y: 10 },
     map: toRows(map),
-    relics: [
-      { x: 13, y: 17, kind: "map" },
-      { x: 42, y: 16, kind: "compass" },
-      { x: 66, y: 17, kind: "gemPurple" },
-      { x: 90, y: 11, kind: "gemBlue" },
+    blockers: [
+      rect(4, 7, 5, 10),
+      rect(10, 10, 4, 8),
+      rect(29, 3, 5, 10),
+      rect(36, 3, 5, 10),
+      rect(45, 18, 5, 10),
+      rect(49, 6, 4, 10),
+      rect(27, 20, 3, 4),
+      rect(33, 22, 3, 4),
+      rect(40, 21, 3, 4),
     ],
-    coins: [
-      { x: 8, y: 23, kind: "coinSilver" },
-      { x: 27, y: 19, kind: "coinGold" },
-      { x: 44, y: 16, kind: "coinSilver" },
-      { x: 69, y: 17, kind: "coinGold" },
-      { x: 78, y: 14, kind: "coinSilver" },
-      { x: 92, y: 11, kind: "coinGold" },
-    ],
-    bonuses: [
-      pickup("potionGreen", 16, 17, "time", 18),
-      pickup("mushroom", 40, 23, "score", 45),
-      pickup("lantern", 57, 23, "score", 60),
-      pickup("apple", 73, 14, "score", 35),
-      pickup("potionBlue", 96, 19, "time", 10),
+    hazards: [],
+    npcs: [
+      npc("witch", 8, 25, "The river hides more than fish."),
+      npc("wizard", 31, 14, "The bridge is safer than the water."),
+      npc("cat", 44, 17, "The cat found the gate."),
     ],
     enemies: [
-      { kind: "slime", x: 19, y: 23, minX: 14, maxX: 22, speed: 2.4 },
-      { kind: "goblin", x: 50, y: 23, minX: 46, maxX: 58, speed: 3 },
-      { kind: "bat", x: 70, y: 16, minX: 64, maxX: 80, speed: 3.1 },
-      { kind: "goblin", x: 94, y: 23, minX: 88, maxX: 102, speed: 3.2 },
+      enemy("slime", 14, 26, "x", 10, 17, 2),
+      enemy("bat", 24, 16, "y", 8, 22, 2.4),
+      enemy("goblin", 39, 26, "x", 33, 44, 2.3),
+      enemy("skeleton", 50, 23, "y", 20, 27, 2.2),
     ],
-    backProps: [
-      prop("palmTree", 6, 15, 6, 9),
-      prop("roundTree", 14, 15, 7, 9),
-      prop("pineTree", 33, 15, 6, 9),
-      prop("firTree", 38, 15, 6, 9),
-      prop("hillTree", 43, 15, 6, 9),
-      prop("roundTree", 55, 15, 7, 9),
-      prop("pineTree", 79, 14, 6, 10),
-      prop("towerB", 90, 14, 8, 10),
-      prop("workshop", 97, 16, 9, 8),
+    relics: [
+      item("map", 12, 8),
+      item("gemBlue", 31, 7),
+      item("compass", 39, 16),
+      item("gemPurple", 49, 8),
     ],
-    frontProps: [
-      prop("bush", 11, 23, 3, 2),
-      prop("flowers", 17, 23, 3, 2),
-      prop("rockSmall", 34, 23, 2, 2),
-      prop("rockLarge", 58, 23, 3, 2),
-      prop("fence", 83, 23, 4, 3),
-      prop("fence", 87, 23, 4, 3),
+    coins: [
+      item("coinSilver", 7, 26),
+      item("coinGold", 15, 10),
+      item("coinSilver", 22, 12),
+      item("coinGold", 31, 20),
+      item("coinGold", 40, 16),
+      item("coinSilver", 50, 9),
     ],
-    npcs: [
-      npc("witch", 5, 22),
-      npc("villager", 98, 22),
-      npc("cat", 89, 23),
+    bonuses: [
+      item("mushroom", 11, 24, "score", 35),
+      item("potionGreen", 29, 14, "time", 20),
+      item("lantern", 34, 26, "score", 70),
+      item("apple", 47, 26, "score", 25),
+      item("potionRed", 45, 9, "heal", 1),
+    ],
+    props: [
+      prop("roundTree", 3, 7, 5, 8),
+      prop("pineTree", 9, 10, 4, 7),
+      prop("firTree", 28, 3, 5, 8),
+      prop("hillTree", 34, 3, 5, 8),
+      prop("bush", 26, 22, 3, 2, "front"),
+      prop("bush", 32, 22, 3, 2, "front"),
+      prop("bush", 39, 21, 3, 2, "front"),
+      prop("rockSmall", 15, 23, 2, 2, "front"),
+      prop("rockMedium", 43, 24, 2, 2, "front"),
+      prop("towerB", 47, 17, 5, 10),
+      prop("fence", 18, 10, 4, 3, "front"),
+      prop("fence", 22, 10, 4, 3, "front"),
+      prop("flowers", 44, 25, 3, 2, "front"),
     ],
   };
 }
 
-function buildAshenKeep() {
-  const width = 118;
-  const height = 30;
-  const groundY = 24;
-  const map = createMap(width, height);
-
-  fillGround(map, groundY, 0, 30, 2, 1);
-  fillGround(map, groundY, 31, width - 1, 5, 5);
-  addSolidRect(map, 78, 16, 30, 1, 5);
-  addSolidRect(map, 92, 12, 14, 1, 5);
-  addPlatform(map, 18, 19, 8, 3);
-  addPlatform(map, 38, 17, 7, 3);
-  addPlatform(map, 54, 19, 8, 3);
-  addPlatform(map, 70, 18, 7, 3);
-  addPlatform(map, 96, 11, 7, 3);
-  addWater(map, 46, 5, groundY);
-  addSpikeStrip(map, 64, 23, 5);
-  addSpikeStrip(map, 88, 23, 4);
-  addSpikeStrip(map, 109, 23, 4);
+function buildKeep() {
+  const map = createMap(60, 34, TILE_TYPES.STONE);
+  paintRect(map, 0, 24, 60, 10, TILE_TYPES.BRICK);
+  paintRect(map, 4, 4, 12, 16, TILE_TYPES.DIRT);
+  paintRect(map, 18, 4, 10, 16, TILE_TYPES.STONE);
+  paintRect(map, 30, 4, 12, 16, TILE_TYPES.DIRT);
+  paintRect(map, 44, 4, 12, 16, TILE_TYPES.STONE);
+  paintRect(map, 24, 22, 10, 3, TILE_TYPES.WOOD);
+  paintRect(map, 16, 26, 7, 4, TILE_TYPES.WATER);
+  paintRect(map, 36, 26, 8, 4, TILE_TYPES.WATER);
+  paintRect(map, 24, 26, 10, 4, TILE_TYPES.BRIDGE);
+  paintRect(map, 12, 10, 2, 8, TILE_TYPES.BRICK);
+  paintRect(map, 46, 10, 2, 8, TILE_TYPES.BRICK);
+  paintRect(map, 0, 0, 1, 34, TILE_TYPES.BRICK);
+  paintRect(map, 59, 0, 1, 34, TILE_TYPES.BRICK);
+  paintRect(map, 0, 0, 60, 1, TILE_TYPES.BRICK);
+  paintRect(map, 0, 33, 60, 1, TILE_TYPES.BRICK);
+  paintHLine(map, 22, 19, 16, TILE_TYPES.FLOWERS);
 
   return {
     name: "Ashen Keep",
-    objective: "Bring the relics back through the ruined keep, unlock the final door, and escape the fortress.",
-    timeLimit: 145,
+    objective: "Collect the keep relics, open the war chest, and leave through the final gate.",
+    timeLimit: 180,
     requiredRelics: 5,
-    start: { x: 4, y: 22 },
-    chest: { x: 106, y: 20 },
-    portal: { x: 112, y: 19 },
+    start: { x: 6, y: 27 },
+    chest: { x: 29, y: 16 },
+    door: { x: 55, y: 14 },
     map: toRows(map),
-    relics: [
-      { x: 21, y: 18, kind: "gemPurple" },
-      { x: 41, y: 16, kind: "shield" },
-      { x: 58, y: 18, kind: "sword" },
-      { x: 81, y: 15, kind: "map" },
-      { x: 99, y: 10, kind: "gemBlue" },
+    blockers: [
+      rect(5, 4, 8, 16),
+      rect(18, 4, 10, 7),
+      rect(18, 13, 10, 7),
+      rect(31, 4, 10, 7),
+      rect(31, 13, 10, 7),
+      rect(45, 4, 9, 16),
+      rect(21, 4, 2, 15),
+      rect(37, 4, 2, 15),
+      rect(26, 12, 6, 4),
+      rect(52, 10, 4, 10),
     ],
-    coins: [
-      { x: 15, y: 23, kind: "coinSilver" },
-      { x: 24, y: 18, kind: "coinGold" },
-      { x: 42, y: 16, kind: "coinSilver" },
-      { x: 73, y: 17, kind: "coinGold" },
-      { x: 93, y: 11, kind: "coinGold" },
-      { x: 109, y: 19, kind: "coinSilver" },
-    ],
-    bonuses: [
-      pickup("potionRed", 11, 23, "heal", 1),
-      pickup("fire", 35, 23, "score", 80),
-      pickup("lantern", 76, 17, "score", 80),
-      pickup("potionGold", 96, 10, "time", 15),
-      pickup("shield", 107, 19, "score", 120),
-    ],
-    enemies: [
-      { kind: "goblin", x: 26, y: 23, minX: 20, maxX: 31, speed: 3.1 },
-      { kind: "skeleton", x: 61, y: 23, minX: 55, maxX: 67, speed: 3.3 },
-      { kind: "bat", x: 83, y: 15, minX: 78, maxX: 93, speed: 3.4 },
-      { kind: "skeleton", x: 110, y: 23, minX: 104, maxX: 116, speed: 3.6 },
-    ],
-    backProps: [
-      prop("towerA", 34, 14, 9, 10),
-      prop("towerB", 45, 14, 9, 10),
-      prop("smithy", 57, 16, 10, 8),
-      prop("workshop", 68, 16, 10, 8),
-      prop("towerA", 82, 12, 9, 12),
-      prop("towerB", 97, 12, 9, 12),
-    ],
-    frontProps: [
-      prop("rockMedium", 32, 23, 3, 2),
-      prop("rockLarge", 52, 23, 3, 2),
-      prop("fence", 79, 23, 4, 3),
-      prop("flowers", 89, 23, 3, 2),
-      prop("rockSmall", 102, 23, 2, 2),
+    hazards: [
+      rect(24, 23, 10, 1),
     ],
     npcs: [
-      npc("wizard", 8, 22),
-      npc("elder", 13, 22),
+      npc("wizard", 8, 26, "The last gate reacts to the gold key."),
+      npc("elder", 12, 26, "The keep was built around the relic vault."),
+    ],
+    enemies: [
+      enemy("goblin", 16, 22, "x", 13, 22, 2.4),
+      enemy("skeleton", 34, 22, "x", 30, 40, 2.5),
+      enemy("bat", 28, 18, "y", 10, 22, 2.8),
+      enemy("skeleton", 50, 22, "y", 18, 27, 2.6),
+    ],
+    relics: [
+      item("shield", 10, 8),
+      item("sword", 24, 8),
+      item("gemPurple", 35, 8),
+      item("gemBlue", 49, 8),
+      item("map", 29, 21),
+    ],
+    coins: [
+      item("coinGold", 8, 22),
+      item("coinSilver", 18, 8),
+      item("coinGold", 29, 15),
+      item("coinSilver", 41, 8),
+      item("coinGold", 52, 21),
+    ],
+    bonuses: [
+      item("potionGold", 13, 22, "time", 25),
+      item("fire", 24, 21, "score", 80),
+      item("lantern", 33, 21, "score", 80),
+      item("mushroom", 45, 22, "score", 40),
+      item("potionRed", 54, 21, "heal", 1),
+    ],
+    props: [
+      prop("towerA", 4, 4, 8, 10),
+      prop("towerB", 17, 4, 8, 10),
+      prop("smithy", 26, 12, 8, 8),
+      prop("workshop", 33, 12, 9, 8),
+      prop("towerA", 44, 4, 8, 10),
+      prop("towerB", 51, 10, 7, 10),
+      prop("rockLarge", 22, 25, 3, 2, "front"),
+      prop("rockMedium", 35, 25, 3, 2, "front"),
+      prop("flowers", 29, 19, 3, 2, "front"),
+      prop("fence", 24, 24, 4, 3, "front"),
+      prop("fence", 30, 24, 4, 3, "front"),
     ],
   };
 }
 
-export const LEVELS = [buildOakheartHamlet(), buildGreenriverWilds(), buildAshenKeep()];
+export const LEVELS = [buildVillage(), buildForest(), buildKeep()];
