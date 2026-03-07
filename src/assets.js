@@ -1,111 +1,127 @@
 export const TILE = 16;
 export const ATLAS_URL = "./assets/fantasy-atlas.png";
 
+const CELL = 128;
+
+function cell(col, row, inset = 10) {
+  return {
+    x: col * CELL + inset,
+    y: row * CELL + inset,
+    w: CELL - inset * 2,
+    h: CELL - inset * 2,
+  };
+}
+
+function rect(x, y, w, h) {
+  return { x, y, w, h };
+}
+
 export const ENEMY_ORDER = ["slime", "goblin", "skeleton", "bat"];
 
-// Coordinates for the uploaded 2816x1536 atlas.
-const RECTS = {
-  hero: { x: 608, y: 130, w: 96, h: 122 },
-  slime: { x: 90, y: 520, w: 88, h: 90 },
-  goblin: { x: 262, y: 500, w: 92, h: 126 },
-  skeleton: { x: 612, y: 502, w: 90, h: 126 },
-  bat: { x: 780, y: 516, w: 114, h: 100 },
+const ASSET_RECTS = {
+  heroIdle: [cell(0, 0, 12), cell(1, 0, 12), cell(2, 0, 12), cell(3, 0, 12)],
+  elder: [cell(0, 1, 14)],
+  wizard: [cell(1, 1, 14)],
+  witch: [cell(2, 1, 14)],
+  maiden: [cell(3, 1, 14)],
+  villager: [cell(4, 1, 14)],
 
-  coin: { x: 2190, y: 134, w: 88, h: 90 },
-  relic: { x: 2462, y: 808, w: 88, h: 96 },
-  key: { x: 2625, y: 126, w: 88, h: 96 },
-  chestClosed: { x: 2008, y: 130, w: 122, h: 102 },
-  chestOpen: { x: 1847, y: 130, w: 122, h: 102 },
-  portalLocked: { x: 2630, y: 806, w: 116, h: 126 },
-  portalOpen: { x: 2462, y: 806, w: 88, h: 96 },
-  heart: { x: 2466, y: 318, w: 84, h: 86 },
+  slime: [cell(0, 2, 14), cell(0, 3, 14)],
+  goblin: [cell(1, 2, 14), cell(2, 2, 14), cell(1, 3, 14), cell(2, 3, 14)],
+  skeleton: [cell(3, 2, 14), cell(3, 3, 14)],
+  bat: [cell(4, 2, 10), cell(4, 3, 10)],
+  cat: [cell(3, 4, 20)],
 
-  tileStone: { x: 1306, y: 122, w: 156, h: 156 },
-  tileGround: { x: 970, y: 122, w: 156, h: 156 },
-  tileWood: { x: 969, y: 290, w: 156, h: 156 },
-  tileSpikes: { x: 1298, y: 801, w: 156, h: 122 },
-  tileBounce: { x: 1468, y: 804, w: 156, h: 122 },
-  tileWater: { x: 1468, y: 122, w: 156, h: 156 },
-  tileWaterAlt: { x: 1128, y: 291, w: 156, h: 156 },
+  chestClosed: [cell(16, 0, 16)],
+  chestOpen: [cell(15, 0, 16)],
+  keyGold: [cell(17, 2, 20)],
+  keyDark: [cell(18, 2, 20)],
+  coinGold: [cell(17, 0, 22)],
+  coinSilver: [cell(18, 0, 22)],
+  potionGold: [cell(19, 0, 22)],
+  potionRed: [cell(15, 1, 22)],
+  potionBlue: [cell(16, 1, 22)],
+  potionGreen: [cell(17, 1, 22)],
+  heart: [cell(18, 1, 22)],
+  lantern: [cell(19, 2, 20), cell(15, 3, 20)],
+  fire: [cell(20, 2, 18)],
+  apple: [cell(16, 3, 18), cell(17, 3, 18), cell(18, 3, 18)],
+  mushroom: [cell(19, 3, 18), cell(20, 3, 18)],
+  map: [cell(15, 4, 18), cell(16, 4, 18)],
+  compass: [cell(17, 4, 18)],
+  gemPurple: [cell(18, 4, 18)],
+  gemBlue: [cell(19, 4, 18)],
+  exitDoor: [cell(20, 4, 12)],
+  sword: [cell(15, 2, 20)],
+  shield: [cell(16, 2, 18)],
+
+  palmTree: [cell(8, 2, 8)],
+  roundTree: [cell(9, 2, 8)],
+  pineTree: [cell(10, 2, 8)],
+  firTree: [cell(11, 2, 8)],
+  hillTree: [cell(12, 2, 8)],
+  bush: [cell(10, 3, 18)],
+  fence: [cell(11, 3, 12), cell(12, 3, 12)],
+  rockSmall: [cell(8, 4, 18)],
+  rockMedium: [cell(9, 4, 18)],
+  rockLarge: [cell(10, 4, 18)],
+  flowers: [cell(11, 4, 16), cell(12, 4, 16)],
+
+  houseA: [rect(42, 1150, 270, 318)],
+  houseB: [rect(318, 1150, 270, 320)],
+  towerA: [rect(738, 1128, 232, 332)],
+  towerB: [rect(1014, 1128, 232, 332)],
+  smithy: [rect(1422, 1164, 322, 284)],
+  workshop: [rect(1778, 1150, 356, 300)],
 };
 
-function drawFallbackSprite(ctx, name, x, y, scale = 2) {
+const TILE_RECTS = {
+  1: [cell(10, 0, 4), cell(10, 1, 4)],
+  2: [cell(9, 0, 4), cell(8, 0, 4)],
+  3: [cell(8, 1, 4)],
+  4: [rect(2390, 1272, 250, 126), rect(2120, 1272, 250, 126)],
+  5: [cell(12, 0, 4), cell(10, 1, 4)],
+  6: [cell(11, 0, 4), cell(11, 1, 4)],
+  7: [rect(1158, 566, 250, 110)],
+};
+
+function fallbackColor(name) {
+  if (name.startsWith("hero") || name === "wizard" || name === "witch") return "#60a5fa";
+  if (name === "slime" || name === "goblin") return "#84cc16";
+  if (name === "skeleton") return "#d1d5db";
+  if (name === "bat") return "#a78bfa";
+  if (name.includes("coin") || name.includes("key")) return "#facc15";
+  if (name.includes("gem")) return "#c084fc";
+  if (name.includes("potion")) return "#38bdf8";
+  return "#94a3b8";
+}
+
+function drawFallbackAsset(ctx, name, x, y, width, height) {
   ctx.fillStyle = "#0f172a";
-  ctx.fillRect(x, y, 8 * scale, 8 * scale);
-
-  const color =
-    name === "hero"
-      ? "#60a5fa"
-      : name === "slime"
-        ? "#22c55e"
-        : name === "goblin"
-          ? "#84cc16"
-          : name === "skeleton"
-            ? "#e5e7eb"
-            : name === "bat"
-              ? "#a855f7"
-              : name === "coin"
-                ? "#facc15"
-                : name === "relic"
-                  ? "#c084fc"
-                  : name === "heart"
-                    ? "#ef4444"
-                    : "#38bdf8";
-
-  ctx.fillStyle = color;
-  ctx.fillRect(x + scale, y + scale, 6 * scale, 6 * scale);
+  ctx.fillRect(x, y, width, height);
+  ctx.fillStyle = fallbackColor(name);
+  ctx.fillRect(x + 2, y + 2, Math.max(4, width - 4), Math.max(4, height - 4));
 }
 
-function drawFallbackTile(ctx, type, x, y, size = TILE, time = 0) {
-  if (type === 1) {
-    ctx.fillStyle = "#6b7280";
-    ctx.fillRect(x, y, size, size);
-    return;
-  }
-  if (type === 2) {
-    ctx.fillStyle = "#8b5a2b";
-    ctx.fillRect(x, y, size, size);
-    ctx.fillStyle = "#4ade80";
-    ctx.fillRect(x, y, size, 5);
-    return;
-  }
-  if (type === 3) {
-    ctx.fillStyle = "#a16207";
-    ctx.fillRect(x, y, size, size);
-    return;
-  }
-  if (type === 4) {
-    ctx.fillStyle = "#d1d5db";
-    ctx.fillRect(x, y + 8, size, 8);
-    return;
-  }
-  if (type === 5) {
-    ctx.fillStyle = "#06b6d4";
-    ctx.fillRect(x, y, size, size);
-    return;
-  }
-  if (type === 6) {
-    const phase = Math.sin(time * 0.01 + x * 0.05);
-    ctx.fillStyle = "#2563eb";
-    ctx.fillRect(x, y, size, size);
-    ctx.fillStyle = "#93c5fd";
-    ctx.fillRect(x, y + 6 + phase, size, 3);
-  }
-}
-
-export function drawSprite(ctx, atlas, name, x, y, options = {}) {
-  const scale = options.scale ?? 2;
-  const flipX = Boolean(options.flipX);
+export function drawAsset(ctx, atlas, name, x, y, options = {}) {
+  const rects = ASSET_RECTS[name];
+  const width = options.width ?? 32;
+  const height = options.height ?? 32;
   const alpha = options.alpha ?? 1;
-  const rect = RECTS[name];
+  const flipX = Boolean(options.flipX);
 
-  if (!atlas || !atlas.complete || !rect) {
-    drawFallbackSprite(ctx, name, x, y, scale);
+  if (!rects || !rects.length) {
+    drawFallbackAsset(ctx, name, x, y, width, height);
     return;
   }
 
-  const width = 8 * scale;
-  const height = 8 * scale;
+  const frameIndex = options.frameIndex ?? 0;
+  const source = rects[frameIndex % rects.length];
+
+  if (!atlas || !atlas.complete) {
+    drawFallbackAsset(ctx, name, x, y, width, height);
+    return;
+  }
 
   ctx.save();
   ctx.globalAlpha = alpha;
@@ -117,27 +133,40 @@ export function drawSprite(ctx, atlas, name, x, y, options = {}) {
     y = 0;
   }
 
-  ctx.drawImage(atlas, rect.x, rect.y, rect.w, rect.h, x, y, width, height);
+  ctx.drawImage(atlas, source.x, source.y, source.w, source.h, x, y, width, height);
   ctx.restore();
 }
 
+function drawFallbackTile(ctx, type, x, y, size, time) {
+  if (type === 2) {
+    ctx.fillStyle = "#7ddc6f";
+    ctx.fillRect(x, y, size, size);
+    ctx.fillStyle = "#8d633a";
+    ctx.fillRect(x, y + size - 4, size, 4);
+    return;
+  }
+  if (type === 6) {
+    const bob = Math.sin(time * 0.01 + x * 0.1) * 1.5;
+    ctx.fillStyle = "#38bdf8";
+    ctx.fillRect(x, y, size, size);
+    ctx.fillStyle = "#bae6fd";
+    ctx.fillRect(x, y + 7 + bob, size, 3);
+    return;
+  }
+  ctx.fillStyle = type === 4 ? "#d1d5db" : type === 5 ? "#b45309" : "#6b7280";
+  ctx.fillRect(x, y, size, size);
+}
+
 export function drawTile(ctx, atlas, type, x, y, size = TILE, time = 0) {
+  const rects = TILE_RECTS[type];
+  if (!rects || !rects.length) return;
+
   if (!atlas || !atlas.complete) {
     drawFallbackTile(ctx, type, x, y, size, time);
     return;
   }
 
-  let rect = null;
-  if (type === 1) rect = RECTS.tileStone;
-  else if (type === 2) rect = RECTS.tileGround;
-  else if (type === 3) rect = RECTS.tileWood;
-  else if (type === 4) rect = RECTS.tileSpikes;
-  else if (type === 5) rect = RECTS.tileBounce;
-  else if (type === 6) {
-    const waterAlt = Math.floor(time / 260) % 2 === 0;
-    rect = waterAlt ? RECTS.tileWater : RECTS.tileWaterAlt;
-  }
-
-  if (!rect) return;
-  ctx.drawImage(atlas, rect.x, rect.y, rect.w, rect.h, x, y, size, size);
+  const frameIndex = type === 6 ? Math.floor(time / 260) % rects.length : (x / size + y / size) % rects.length;
+  const source = rects[Math.abs(frameIndex) % rects.length];
+  ctx.drawImage(atlas, source.x, source.y, source.w, source.h, x, y, size, size);
 }

@@ -1,6 +1,6 @@
 import { AudioSystem } from "./audio.js";
 import { LEVELS } from "./levels.js";
-import { ATLAS_URL, ENEMY_ORDER, TILE, drawSprite, drawTile } from "./assets.js";
+import { ATLAS_URL, ENEMY_ORDER, TILE, drawAsset, drawTile } from "./assets.js";
 
 const canvas = document.querySelector("#game");
 const ctx = canvas.getContext("2d");
@@ -23,11 +23,9 @@ atlas.src = ATLAS_URL;
 
 const keys = new Set();
 const gravity = 930;
-const jumpVelocity = -370;
-const bounceVelocity = -500;
+const jumpVelocity = -365;
 const playerSpeed = 152;
-const enemyWidth = 16;
-const enemyHeight = 16;
+const playerMaxLives = 5;
 
 const state = {
   levelIndex: 0,
@@ -58,20 +56,16 @@ const state = {
 
 function cloneLevel(index) {
   const source = LEVELS[index];
-  const chest = source.chest ?? { x: Math.max(2, source.portal.x - 3), y: source.portal.y };
-
   return {
     ...source,
-    chest,
     mapRows: source.map.map((row) => row.split("").map(Number)),
     coins: source.coins.map((coin) => ({ ...coin, taken: false })),
     relics: source.relics.map((relic) => ({ ...relic, taken: false })),
-    enemies: source.enemies.map((enemy, indexInLevel) => ({
-      ...enemy,
-      kind: enemy.kind ?? ENEMY_ORDER[indexInLevel % ENEMY_ORDER.length],
-      dir: 1,
-      spawnX: enemy.x,
-    })),
+    bonuses: source.bonuses.map((bonus) => ({ ...bonus, taken: false })),
+    enemies: source.enemies.map((enemy) => ({ ...enemy, dir: 1, spawnX: enemy.x })),
+    backProps: [...source.backProps],
+    frontProps: [...source.frontProps],
+    npcs: [...source.npcs],
   };
 }
 
@@ -83,7 +77,7 @@ function tileAt(tx, ty) {
 }
 
 function isSolidTile(tile) {
-  return tile === 1 || tile === 2 || tile === 3 || tile === 5;
+  return tile === 1 || tile === 2 || tile === 3 || tile === 5 || tile === 7;
 }
 
 function intersects(a, b) {
@@ -93,7 +87,7 @@ function intersects(a, b) {
 function resetPlayerToStart() {
   const start = state.level.start;
   state.player.x = start.x * TILE + 2;
-  state.player.y = start.y * TILE - 8;
+  state.player.y = start.y * TILE - 10;
   state.player.vx = 0;
   state.player.vy = 0;
   state.player.onGround = false;
@@ -112,6 +106,9 @@ function resetLevelProgress() {
   }
   for (const relic of state.level.relics) {
     relic.taken = false;
+  }
+  for (const bonus of state.level.bonuses) {
+    bonus.taken = false;
   }
   for (const enemy of state.level.enemies) {
     enemy.x = enemy.spawnX;
@@ -176,6 +173,13 @@ function collideY(entity, dt) {
   }
 }
 
+function resetAfterDamage(fullReset) {
+  if (fullReset) {
+    resetLevelProgress();
+  }
+  resetPlayerToStart();
+}
+
 function damagePlayer(reason, fullReset = false) {
   if (state.player.invulnTimer > 0) return;
 
@@ -186,14 +190,10 @@ function damagePlayer(reason, fullReset = false) {
   if (state.lives <= 0) {
     state.lives = 3;
     fullReset = true;
-    state.status = "All hearts lost. Stage reset.";
+    state.status = "The path resets.";
   }
 
-  if (fullReset) {
-    resetLevelProgress();
-  }
-
-  resetPlayerToStart();
+  resetAfterDamage(fullReset);
 }
 
 function checkHazards() {
@@ -210,13 +210,7 @@ function checkHazards() {
         return;
       }
       if (tile === 6) {
-        damagePlayer("Water trap!", false);
-        return;
-      }
-      if (tile === 5 && state.player.vy >= 0 && y >= bottom - 1) {
-        state.player.vy = bounceVelocity;
-        state.player.onGround = false;
-        audio.bounce();
+        damagePlayer("Water dragged you under.", false);
         return;
       }
     }
@@ -255,7 +249,7 @@ function updatePlayer(dt) {
 
   const fallLimit = state.level.mapRows.length * TILE + 24;
   if (state.player.y > fallLimit) {
-    damagePlayer("Fell into darkness", false);
+    damagePlayer("You fell below the kingdom.", false);
   }
 }
 
@@ -272,38 +266,64 @@ function updateEnemies(dt) {
       enemy.dir = -1;
     }
 
-    const box = { x: enemy.x, y: enemy.y * TILE - 1, w: enemyWidth, h: enemyHeight };
+    const box = { x: enemy.x + 4, y: enemy.y * TILE + 4, w: 10, h: 10 };
     if (intersects(state.player, box)) {
-      damagePlayer("Enemy strike", false);
+      damagePlayer("A creature struck you.", false);
     }
+  }
+}
+
+function applyBonus(bonus) {
+  if (bonus.effect === "score") {
+    state.score += bonus.value;
+    state.status = "Treasure found.";
+    return;
+  }
+
+  if (bonus.effect === "time") {
+    state.timeLeft = Math.min(state.level.timeLimit + 30, state.timeLeft + bonus.value);
+    state.status = "More time gained.";
+    return;
+  }
+
+  if (bonus.effect === "heal") {
+    state.lives = Math.min(playerMaxLives, state.lives + bonus.value);
+    state.status = "Hearts restored.";
   }
 }
 
 function updateObjectives() {
   for (const coin of state.level.coins) {
     if (coin.taken) continue;
-
     const box = { x: coin.x * TILE + 3, y: coin.y * TILE + 3, w: 10, h: 10 };
     if (intersects(state.player, box)) {
       coin.taken = true;
       state.levelCoins += 1;
       state.totalCoins += 1;
-      state.score += 10;
+      state.score += coin.kind === "coinSilver" ? 10 : 20;
       audio.coin();
+    }
+  }
+
+  for (const bonus of state.level.bonuses) {
+    if (bonus.taken) continue;
+    const box = { x: bonus.x * TILE + 2, y: bonus.y * TILE + 2, w: 12, h: 12 };
+    if (intersects(state.player, box)) {
+      bonus.taken = true;
+      applyBonus(bonus);
     }
   }
 
   for (const relic of state.level.relics) {
     if (relic.taken) continue;
-
-    const box = { x: relic.x * TILE + 2, y: relic.y * TILE + 2, w: 12, h: 12 };
+    const box = { x: relic.x * TILE + 1, y: relic.y * TILE + 1, w: 13, h: 13 };
     if (intersects(state.player, box)) {
       relic.taken = true;
       state.levelRelics += 1;
       state.totalRelics += 1;
-      state.score += 50;
+      state.score += 60;
       audio.relic();
-      state.status = `Relic shard ${state.levelRelics}/${state.level.requiredRelics}`;
+      state.status = `Relic ${state.levelRelics}/${state.level.requiredRelics} recovered.`;
     }
   }
 
@@ -311,57 +331,58 @@ function updateObjectives() {
     const chestBox = {
       x: state.level.chest.x * TILE,
       y: state.level.chest.y * TILE,
-      w: 16,
-      h: 16,
+      w: 24,
+      h: 20,
     };
 
     if (intersects(state.player, chestBox)) {
       state.hasLevelKey = true;
       state.score += 100;
       audio.key();
-      state.status = "Vault key found. Portal unlocked.";
+      state.status = "The chest opened. The gate key is yours.";
     }
   }
 
   const portalBox = {
     x: state.level.portal.x * TILE,
     y: state.level.portal.y * TILE,
-    w: 16,
-    h: 16,
+    w: 18,
+    h: 30,
   };
 
-  if (intersects(state.player, portalBox)) {
-    if (!state.hasLevelKey) {
-      if (state.levelRelics < state.level.requiredRelics) {
-        const needed = state.level.requiredRelics - state.levelRelics;
-        state.status = `Find ${needed} more relic shard(s)`;
-      } else {
-        state.status = "Open the chest to get the key";
-      }
-      return;
-    }
-
-    audio.portal();
-
-    if (state.levelIndex === LEVELS.length - 1) {
-      state.status = `Realm restored. Score ${state.score}`;
-      state.gameWon = true;
-      audio.setMood("triumph");
-      audio.win();
-    } else {
-      loadLevel(state.levelIndex + 1, true);
-    }
+  if (!intersects(state.player, portalBox)) {
+    return;
   }
+
+  if (!state.hasLevelKey) {
+    state.status =
+      state.levelRelics < state.level.requiredRelics
+        ? `Find ${state.level.requiredRelics - state.levelRelics} more relic(s).`
+        : "Open the chest to unlock the gate.";
+    return;
+  }
+
+  audio.portal();
+
+  if (state.levelIndex === LEVELS.length - 1) {
+    state.status = `The kingdom is restored. Score ${state.score}`;
+    state.gameWon = true;
+    audio.setMood("triumph");
+    audio.win();
+    return;
+  }
+
+  loadLevel(state.levelIndex + 1, true);
 }
 
 function updateTimer(dt) {
   state.timeLeft -= dt;
   if (state.timeLeft <= 0) {
     state.timeLeft = 0;
-    damagePlayer("Time is up", true);
+    damagePlayer("Time ran out.", true);
   }
 
-  if (state.timeLeft <= 18) {
+  if (state.timeLeft <= 22) {
     audio.setMood("danger");
   } else if (state.hasLevelKey) {
     audio.setMood("triumph");
@@ -379,35 +400,64 @@ function updateCamera() {
 
 function drawBackground(time) {
   const grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
-  grad.addColorStop(0, "#132746");
-  grad.addColorStop(1, "#091626");
+  grad.addColorStop(0, "#142844");
+  grad.addColorStop(0.6, "#0d1d34");
+  grad.addColorStop(1, "#091320");
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  for (let i = 0; i < 36; i += 1) {
-    const px = (i * 179 + Math.floor(state.cameraX * 0.18)) % canvas.width;
-    const py = 20 + (i * 57) % (canvas.height - 80);
-    ctx.fillStyle = i % 3 === 0 ? "#9cc3ff22" : "#ffffff14";
+  ctx.fillStyle = "#ffffff18";
+  for (let i = 0; i < 40; i += 1) {
+    const px = (i * 173 + Math.floor(state.cameraX * 0.2)) % canvas.width;
+    const py = 18 + (i * 59) % (canvas.height - 110);
     ctx.fillRect(px, py, 2, 2);
   }
 
-  ctx.fillStyle = "#0c2236";
-  const layerOffset = (state.cameraX * 0.35) % canvas.width;
+  ctx.fillStyle = "#0e2540";
+  const offset = (state.cameraX * 0.28) % 220;
   ctx.beginPath();
-  ctx.moveTo(-layerOffset, canvas.height);
-  for (let x = -layerOffset; x <= canvas.width + 120; x += 40) {
-    const ridge = 220 + Math.sin((x + time * 0.03) * 0.03) * 18;
+  ctx.moveTo(-offset, canvas.height);
+  for (let x = -offset; x <= canvas.width + 220; x += 36) {
+    const ridge = 235 + Math.sin((x + time * 0.04) * 0.024) * 14;
     ctx.lineTo(x, ridge);
   }
   ctx.lineTo(canvas.width, canvas.height);
   ctx.fill();
 }
 
+function drawPropList(props, time, alpha = 1) {
+  for (const item of props) {
+    const frameIndex =
+      item.name === "flowers" || item.name === "fence" || item.name === "lantern"
+        ? Math.floor(time / 400) % 2
+        : 0;
+    drawAsset(ctx, atlas, item.name, item.x * TILE - state.cameraX, item.y * TILE, {
+      width: item.width * TILE,
+      height: item.height * TILE,
+      flipX: item.flipX,
+      alpha,
+      frameIndex,
+    });
+  }
+}
+
+function drawNpcList(time) {
+  for (const character of state.level.npcs) {
+    drawAsset(ctx, atlas, character.name, character.x * TILE - state.cameraX, character.y * TILE, {
+      width: 32,
+      height: 32,
+      frameIndex: character.name === "cat" ? Math.floor(time / 500) % 1 : 0,
+    });
+  }
+}
+
 function drawWorld(time) {
+  drawPropList(state.level.backProps, time, 0.95);
+
   const rows = state.level.mapRows;
   const cols = rows[0].length;
   const startCol = Math.floor(state.cameraX / TILE);
-  const endCol = Math.min(cols, startCol + Math.ceil(canvas.width / TILE) + 2);
+  const endCol = Math.min(cols, startCol + Math.ceil(canvas.width / TILE) + 3);
 
   for (let y = 0; y < rows.length; y += 1) {
     for (let x = startCol; x < endCol; x += 1) {
@@ -417,54 +467,74 @@ function drawWorld(time) {
     }
   }
 
+  drawNpcList(time);
+
   for (const coin of state.level.coins) {
     if (coin.taken) continue;
-    const bob = Math.sin(time * 0.006 + coin.x) * 1.5;
-    drawSprite(ctx, atlas, "coin", coin.x * TILE - state.cameraX, coin.y * TILE + bob, { scale: 2 });
+    const bob = Math.sin(time * 0.006 + coin.x) * 2;
+    drawAsset(ctx, atlas, coin.kind ?? "coinGold", coin.x * TILE - state.cameraX, coin.y * TILE + bob, {
+      width: 18,
+      height: 18,
+      frameIndex: Math.floor(time / 280) % 2,
+    });
+  }
+
+  for (const bonus of state.level.bonuses) {
+    if (bonus.taken) continue;
+    const bob = Math.sin(time * 0.004 + bonus.x) * 1.5;
+    drawAsset(ctx, atlas, bonus.name, bonus.x * TILE - state.cameraX, bonus.y * TILE + bob, {
+      width: 20,
+      height: 20,
+      frameIndex: Math.floor(time / 320) % 2,
+    });
   }
 
   for (const relic of state.level.relics) {
     if (relic.taken) continue;
-    const bob = Math.sin(time * 0.004 + relic.x * 0.4) * 1.8;
-    drawSprite(ctx, atlas, "relic", relic.x * TILE - state.cameraX, relic.y * TILE + bob, { scale: 2 });
-  }
-
-  drawSprite(
-    ctx,
-    atlas,
-    state.hasLevelKey ? "chestOpen" : "chestClosed",
-    state.level.chest.x * TILE - state.cameraX,
-    state.level.chest.y * TILE,
-    { scale: 2 },
-  );
-
-  if (state.hasLevelKey) {
-    drawSprite(ctx, atlas, "key", state.level.chest.x * TILE - state.cameraX + 18, state.level.chest.y * TILE - 10, {
-      scale: 1,
-      alpha: 0.85,
+    const bob = Math.sin(time * 0.004 + relic.x * 0.5) * 2;
+    drawAsset(ctx, atlas, relic.kind ?? "gemPurple", relic.x * TILE - state.cameraX, relic.y * TILE + bob, {
+      width: 20,
+      height: 20,
+      frameIndex: Math.floor(time / 300) % 2,
     });
   }
 
+  drawAsset(ctx, atlas, state.hasLevelKey ? "chestOpen" : "chestClosed", state.level.chest.x * TILE - state.cameraX, state.level.chest.y * TILE, {
+    width: 28,
+    height: 24,
+  });
+
+  if (!state.hasLevelKey) {
+    drawAsset(ctx, atlas, "keyDark", state.level.portal.x * TILE - state.cameraX + 4, state.level.portal.y * TILE - 10, {
+      width: 16,
+      height: 16,
+    });
+  }
+
+  drawAsset(ctx, atlas, "exitDoor", state.level.portal.x * TILE - state.cameraX, state.level.portal.y * TILE, {
+    width: 28,
+    height: 34,
+    alpha: state.hasLevelKey ? 1 : 0.72,
+  });
+
   for (const enemy of state.level.enemies) {
-    const sprite = ENEMY_ORDER.includes(enemy.kind) ? enemy.kind : "goblin";
-    drawSprite(ctx, atlas, sprite, enemy.x - state.cameraX, enemy.y * TILE - 1, {
-      scale: 2,
+    const frameIndex = Math.floor(time / 170) % 2;
+    drawAsset(ctx, atlas, ENEMY_ORDER.includes(enemy.kind) ? enemy.kind : "goblin", enemy.x - state.cameraX, enemy.y * TILE, {
+      width: enemy.kind === "bat" ? 34 : 32,
+      height: enemy.kind === "bat" ? 30 : 32,
+      frameIndex,
       flipX: enemy.dir < 0,
     });
   }
 
-  drawSprite(
-    ctx,
-    atlas,
-    state.hasLevelKey ? "portalOpen" : "portalLocked",
-    state.level.portal.x * TILE - state.cameraX,
-    state.level.portal.y * TILE,
-    { scale: 2 },
-  );
+  drawPropList(state.level.frontProps, time);
 
-  if (!(state.player.invulnTimer > 0.1 && Math.floor(state.player.invulnTimer * 16) % 2 === 0)) {
-    drawSprite(ctx, atlas, "hero", state.player.x - state.cameraX, state.player.y, {
-      scale: 2,
+  const heroFrame = state.player.onGround && Math.abs(state.player.vx) > 12 ? Math.floor(time / 130) % 4 : 0;
+  if (!(state.player.invulnTimer > 0.1 && Math.floor(state.player.invulnTimer * 15) % 2 === 0)) {
+    drawAsset(ctx, atlas, "heroIdle", state.player.x - state.cameraX - 8, state.player.y - 10, {
+      width: 38,
+      height: 38,
+      frameIndex: heroFrame,
       flipX: state.playerFacing < 0,
     });
   }
@@ -472,17 +542,21 @@ function drawWorld(time) {
 
 function drawOverlay() {
   for (let i = 0; i < state.lives; i += 1) {
-    drawSprite(ctx, atlas, "heart", 10 + i * 18, 8, { scale: 1 });
+    drawAsset(ctx, atlas, "heart", 10 + i * 18, 8, { width: 14, height: 14 });
+  }
+
+  if (state.hasLevelKey) {
+    drawAsset(ctx, atlas, "keyGold", 10, 26, { width: 16, height: 16 });
   }
 
   if (state.gameWon) {
-    ctx.fillStyle = "#000a";
+    ctx.fillStyle = "#000b";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = "#f5f8ff";
+    ctx.fillStyle = "#f8f3dc";
     ctx.font = "24px Lucida Console";
-    ctx.fillText("PIXEL GAME CLEARED", 178, 154);
+    ctx.fillText("KINGDOM RESTORED", 190, 152);
     ctx.font = "14px Lucida Console";
-    ctx.fillText(`Final score: ${state.score}`, 236, 184);
+    ctx.fillText(`Final score: ${state.score}`, 238, 180);
   }
 }
 
