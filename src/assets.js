@@ -28,6 +28,17 @@ export const TILE_TYPES = {
   FLOWERS: 8,
 };
 
+export const TILE_REGIONS = {
+  [TILE_TYPES.GRASS]: { x: 1024, y: 0, w: 128, h: 128 },
+  [TILE_TYPES.DIRT]: { x: 1280, y: 0, w: 128, h: 128 },
+  [TILE_TYPES.STONE]: { x: 1536, y: 0, w: 128, h: 128 },
+  [TILE_TYPES.WATER]: { x: 1792, y: 0, w: 128, h: 128 },
+  [TILE_TYPES.WOOD]: { x: 1152, y: 512, w: 128, h: 128 },
+  [TILE_TYPES.BRICK]: { x: 1920, y: 0, w: 128, h: 128 },
+  [TILE_TYPES.BRIDGE]: { x: 1152, y: 512, w: 128, h: 128 },
+  [TILE_TYPES.FLOWERS]: { x: 1152, y: 0, w: 128, h: 128 },
+};
+
 export const TILE_COLLISION = new Set([TILE_TYPES.WATER, TILE_TYPES.BRICK]);
 const processedFrameCache = new Map();
 
@@ -407,111 +418,10 @@ function drawFallbackTile(ctx, type, x, y, size, time) {
 }
 
 export function drawTile(ctx, atlas, type, x, y, size = TILE, time = 0) {
-  if (type === TILE_TYPES.GRASS) {
-    ctx.fillStyle = "#72c86b";
-    ctx.fillRect(x, y, size, size);
-    ctx.fillStyle = "#8ddb7c";
-    ctx.fillRect(x + 1, y + 2, 3, 2);
-    ctx.fillRect(x + 9, y + 5, 2, 2);
-    ctx.fillRect(x + 6, y + 11, 3, 2);
-    ctx.fillStyle = "#54a457";
-    ctx.fillRect(x + 4, y + 1, 1, 4);
-    ctx.fillRect(x + 11, y + 9, 1, 4);
-    ctx.fillRect(x + 2, y + 10, 1, 4);
+  const region = TILE_REGIONS[type];
+  if (region && atlas && atlas.complete) {
+    ctx.drawImage(atlas, region.x, region.y, region.w, region.h, x, y, size, size);
     return;
   }
-
-  if (type === TILE_TYPES.DIRT) {
-    ctx.fillStyle = "#9d6d46";
-    ctx.fillRect(x, y, size, size);
-    ctx.fillStyle = "#b78458";
-    ctx.fillRect(x + 2, y + 2, 2, 2);
-    ctx.fillRect(x + 10, y + 5, 2, 2);
-    ctx.fillRect(x + 7, y + 11, 2, 2);
-    ctx.fillStyle = "#7c5135";
-    ctx.fillRect(x + 4, y + 8, 2, 1);
-    ctx.fillRect(x + 12, y + 12, 1, 2);
-    return;
-  }
-
-  if (type === TILE_TYPES.STONE) {
-    ctx.fillStyle = "#9ca6b3";
-    ctx.fillRect(x, y, size, size);
-    ctx.strokeStyle = "#6c7687";
-    ctx.lineWidth = 1;
-    ctx.strokeRect(x + 0.5, y + 0.5, size - 1, size - 1);
-    ctx.beginPath();
-    ctx.moveTo(x + 5.5, y + 0.5);
-    ctx.lineTo(x + 5.5, y + size - 0.5);
-    ctx.moveTo(x + 10.5, y + 0.5);
-    ctx.lineTo(x + 10.5, y + size - 0.5);
-    ctx.moveTo(x + 0.5, y + 6.5);
-    ctx.lineTo(x + size - 0.5, y + 6.5);
-    ctx.moveTo(x + 0.5, y + 11.5);
-    ctx.lineTo(x + size - 0.5, y + 11.5);
-    ctx.stroke();
-    return;
-  }
-
-  if (type === TILE_TYPES.WATER) {
-    const bob = Math.sin(time * 0.01 + (x + y) * 0.08) * 1.2;
-    ctx.fillStyle = "#57aceb";
-    ctx.fillRect(x, y, size, size);
-    ctx.fillStyle = "#8dd0ff";
-    ctx.fillRect(x, y + 4 + bob, size, 2);
-    ctx.fillRect(x, y + 10 - bob, size, 2);
-    ctx.fillStyle = "#d5f0ff";
-    ctx.fillRect(x + 2, y + 6 + bob, 3, 1);
-    ctx.fillRect(x + 9, y + 12 - bob, 3, 1);
-    return;
-  }
-
-  if (type === TILE_TYPES.WOOD) {
-    ctx.fillStyle = "#b37a48";
-    ctx.fillRect(x, y, size, size);
-    ctx.fillStyle = "#8b5a36";
-    ctx.fillRect(x + 3, y, 1, size);
-    ctx.fillRect(x + 8, y, 1, size);
-    ctx.fillRect(x + 13, y, 1, size);
-    ctx.fillStyle = "#d39a63";
-    ctx.fillRect(x, y + 2, size, 2);
-    ctx.fillRect(x, y + 10, size, 2);
-    return;
-  }
-
-  if (type === TILE_TYPES.BRICK) {
-    ctx.fillStyle = "#7d8596";
-    ctx.fillRect(x, y, size, size);
-    ctx.fillStyle = "#596273";
-    ctx.fillRect(x, y + 5, size, 1);
-    ctx.fillRect(x, y + 11, size, 1);
-    ctx.fillRect(x + 5, y, 1, 6);
-    ctx.fillRect(x + 11, y + 5, 1, 6);
-    ctx.fillRect(x + 3, y + 11, 1, 5);
-    return;
-  }
-
-  if (type === TILE_TYPES.BRIDGE) {
-    ctx.fillStyle = "#7a532f";
-    ctx.fillRect(x, y, size, size);
-    ctx.fillStyle = "#b88453";
-    ctx.fillRect(x, y + 2, size, 3);
-    ctx.fillRect(x, y + 9, size, 3);
-    ctx.fillStyle = "#4e341d";
-    ctx.fillRect(x + 3, y, 1, size);
-    ctx.fillRect(x + 12, y, 1, size);
-    return;
-  }
-
-  if (type === TILE_TYPES.FLOWERS) {
-    drawTile(ctx, atlas, TILE_TYPES.GRASS, x, y, size, time);
-    ctx.fillStyle = "#f472b6";
-    ctx.fillRect(x + 3, y + 4, 2, 2);
-    ctx.fillRect(x + 10, y + 8, 2, 2);
-    ctx.fillStyle = "#facc15";
-    ctx.fillRect(x + 6, y + 10, 2, 2);
-    return;
-  }
-
   drawFallbackTile(ctx, type, x, y, size, time);
 }
