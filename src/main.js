@@ -8,14 +8,7 @@ const ctx = canvas.getContext("2d");
 ctx.imageSmoothingEnabled = false;
 
 const hud = {
-  level: document.querySelector("#hud-level"),
-  region: document.querySelector("#hud-region"),
   guide: document.querySelector("#hud-guide"),
-  lives: document.querySelector("#hud-lives"),
-  relics: document.querySelector("#hud-relics"),
-  coins: document.querySelector("#hud-coins"),
-  time: document.querySelector("#hud-time"),
-  status: document.querySelector("#hud-status"),
   guideNote: document.querySelector("#hud-guide-note"),
   questList: document.querySelector("#quest-list"),
 };
@@ -619,22 +612,53 @@ function drawPickups(time) {
 
 function drawUi() {
   const currentAtlas = useNewAtlas ? newAtlas : atlas;
+  
+  // Background for HUD area
+  ctx.fillStyle = "rgba(0, 0, 0, 0.4)";
+  ctx.fillRect(0, 0, canvas.width, 40);
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.2)";
+  ctx.lineWidth = 2;
+  ctx.strokeRect(0, 0, canvas.width, 40);
+
+  // Lives (Hearts)
   for (let i = 0; i < playerMaxLives; i += 1) {
-    drawAsset(ctx, currentAtlas, i < state.lives ? "heart" : "heartEmpty", 10 + i * 16, 8, {
-      width: 14,
-      height: 14,
-      frameIndex: 0,
+    drawAsset(ctx, currentAtlas, i < state.lives ? "uiIconHeart" : "heartEmpty", 10 + i * 24, 8, {
+      width: 24,
+      height: 24,
     });
   }
+
+  // Set font for canvas HUD
+  ctx.font = "12px 'Pixel', monospace";
+  ctx.fillStyle = "#fff";
+  ctx.textAlign = "left";
+
+  // Coins
+  drawAsset(ctx, currentAtlas, "uiIconCoin", 150, 8, { width: 24, height: 24 });
+  ctx.fillText(String(state.totalCoins), 178, 25);
+
+  // Relics
+  drawAsset(ctx, currentAtlas, "uiIconSwords", 230, 8, { width: 24, height: 24 });
+  ctx.fillText(`${state.levelRelics}/${state.level.requiredRelics}`, 258, 25);
+
+  // Time
+  drawAsset(ctx, currentAtlas, "uiIconDrop", 320, 8, { width: 24, height: 24 });
+  ctx.fillText(`${Math.ceil(Math.max(0, state.timeLeft))}s`, 348, 25);
+
+  // Level & Status
+  ctx.textAlign = "right";
+  ctx.fillText(`LVL ${state.levelIndex + 1}`, canvas.width - 10, 25);
 
   if (state.gameWon) {
     ctx.fillStyle = "#000b";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.fillStyle = "#f4eed7";
-    ctx.font = "24px Lucida Console";
-    ctx.fillText("KINGDOM RESTORED", 176, 150);
-    ctx.font = "14px Lucida Console";
-    ctx.fillText(`Final score: ${state.score}`, 236, 178);
+    ctx.font = "24px 'Pixel', monospace";
+    ctx.textAlign = "center";
+    ctx.fillText("KINGDOM RESTORED", canvas.width / 2, 150);
+    ctx.font = "14px 'Pixel', monospace";
+    ctx.fillText(`FINAL SCORE: ${state.score}`, canvas.width / 2, 180);
+    ctx.fillText("PRESS F5 TO RESTART", canvas.width / 2, 210);
   }
 }
 
@@ -648,14 +672,7 @@ function render(time) {
   drawProps("front", time);
   drawUi();
 
-  if (hud.level) hud.level.textContent = String(state.levelIndex + 1);
-  if (hud.region) hud.region.textContent = state.level.name;
   if (hud.guide) hud.guide.textContent = state.level.guideName;
-  if (hud.lives) hud.lives.textContent = String(state.lives);
-  if (hud.relics) hud.relics.textContent = `${state.levelRelics}/${state.level.requiredRelics}`;
-  if (hud.coins) hud.coins.textContent = String(state.totalCoins);
-  if (hud.time) hud.time.textContent = String(Math.ceil(Math.max(0, state.timeLeft)));
-  if (hud.status) hud.status.textContent = state.status;
   if (hud.guideNote) hud.guideNote.textContent = state.guideMessage;
   updateQuestLog();
 }

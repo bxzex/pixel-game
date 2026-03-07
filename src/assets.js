@@ -91,6 +91,13 @@ const ASSETS = {
   towerB: [cell(13, 5, 0), cell(13, 6, 0)],
   smithy: [cell(14, 5, 0), cell(15, 5, 0)],
   workshop: [cell(14, 6, 0), cell(15, 6, 0)],
+
+  uiBarGreen: [rect(1024, 1024, 256, 128)],
+  uiBarRed: [rect(1280, 1024, 256, 128)],
+  uiIconHeart: [cell(8, 9, 10)],
+  uiIconDrop: [cell(9, 9, 10)],
+  uiIconCoin: [cell(10, 9, 10)],
+  uiIconSwords: [cell(11, 9, 10)],
 };
 
 export const ASSET_GROUPS = {

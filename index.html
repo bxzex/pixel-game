@@ -14,19 +14,9 @@
         <button id="credits-btn" class="menu-btn">CREDITS</button>
       </div>
 
-      <header class="topbar">
-        <h1>PIXEL QUEST</h1>
-        <div id="hud-status">STATUS: START</div>
-      </header>
-      
-      <section class="hud">
-        <p><span>REGION</span> <strong id="hud-region">...</strong></p>
-        <p><span>LEVEL</span> <strong id="hud-level">1</strong></p>
-        <p><span>LIVES</span> <strong id="hud-lives">3</strong></p>
-        <p><span>RELICS</span> <strong id="hud-relics">0/0</strong></p>
-        <p><span>COINS</span> <strong id="hud-coins">0</strong></p>
-        <p><span>TIME</span> <strong id="hud-time">0</strong></p>
-      </section>
+      <div style="position: relative;">
+        <canvas id="game" width="640" height="360"></canvas>
+      </div>
 
       <section class="quests">
         <div class="quest-box">
@@ -38,10 +28,6 @@
           <p id="hud-guide-note" class="guide-note">...</p>
         </div>
       </section>
-
-      <div style="position: relative;">
-        <canvas id="game" width="640" height="360"></canvas>
-      </div>
       
       <p class="help">MOVE: WASD / ARROWS</p>
     </main>
