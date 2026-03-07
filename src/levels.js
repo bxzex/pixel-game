@@ -67,6 +67,9 @@ function buildVillage() {
 
   return {
     name: "Oakheart Village",
+    questTitle: "The Elder's Request",
+    guideName: "Elder",
+    guideNpc: "elder",
     objective: "Speak to the elder, gather the village relics, open the chest, then unlock the east gate.",
     timeLimit: 150,
     requiredRelics: 3,
@@ -117,6 +120,12 @@ function buildVillage() {
       item("potionRed", 25, 10, "heal", 1),
       item("lantern", 19, 24, "score", 60),
     ],
+    questSteps: [
+      { id: "talk-guide", text: "Speak to the Elder in the village square." },
+      { id: "collect-relics", text: "Recover the village relics and maps." },
+      { id: "open-chest", text: "Open the plaza chest to claim the east-gate key." },
+      { id: "reach-door", text: "Unlock the east gate and leave for the forest." },
+    ],
     props: [
       prop("houseA", 2, 14, 8, 9),
       prop("houseB", 10, 14, 8, 9),
@@ -154,6 +163,9 @@ function buildForest() {
 
   return {
     name: "Greenriver Forest",
+    questTitle: "Crossing Greenriver",
+    guideName: "Witch",
+    guideNpc: "witch",
     objective: "Cross the river bridges, recover the forest relics, and unlock the keep road.",
     timeLimit: 165,
     requiredRelics: 4,
@@ -205,6 +217,12 @@ function buildForest() {
       item("apple", 47, 26, "score", 25),
       item("potionRed", 45, 9, "heal", 1),
     ],
+    questSteps: [
+      { id: "talk-guide", text: "Find the Witch at the river entrance." },
+      { id: "collect-relics", text: "Recover the forest relics, compass, and gem shards." },
+      { id: "open-chest", text: "Open the ruin chest to reveal the keep key." },
+      { id: "reach-door", text: "Unlock the forest gate to the keep road." },
+    ],
     props: [
       prop("roundTree", 3, 7, 5, 8),
       prop("pineTree", 9, 10, 4, 7),
@@ -244,6 +262,9 @@ function buildKeep() {
 
   return {
     name: "Ashen Keep",
+    questTitle: "Restore the Keep",
+    guideName: "Wizard",
+    guideNpc: "wizard",
     objective: "Collect the keep relics, open the war chest, and leave through the final gate.",
     timeLimit: 180,
     requiredRelics: 5,
@@ -296,6 +317,12 @@ function buildKeep() {
       item("lantern", 33, 21, "score", 80),
       item("mushroom", 45, 22, "score", 40),
       item("potionRed", 54, 21, "heal", 1),
+    ],
+    questSteps: [
+      { id: "talk-guide", text: "Meet the Wizard in the keep courtyard." },
+      { id: "collect-relics", text: "Recover the keep relics, sword, shield, and final map." },
+      { id: "open-chest", text: "Open the war chest to claim the gold key." },
+      { id: "reach-door", text: "Unlock the final gate and restore the kingdom." },
     ],
     props: [
       prop("towerA", 4, 4, 8, 10),

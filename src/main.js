@@ -8,12 +8,17 @@ ctx.imageSmoothingEnabled = false;
 
 const hud = {
   level: document.querySelector("#hud-level"),
+  region: document.querySelector("#hud-region"),
+  questTitle: document.querySelector("#hud-quest-title"),
+  guide: document.querySelector("#hud-guide"),
   lives: document.querySelector("#hud-lives"),
   relics: document.querySelector("#hud-relics"),
   coins: document.querySelector("#hud-coins"),
   time: document.querySelector("#hud-time"),
   status: document.querySelector("#hud-status"),
   objective: document.querySelector("#hud-objective"),
+  guideNote: document.querySelector("#hud-guide-note"),
+  questList: document.querySelector("#quest-list"),
 };
 
 const help = document.querySelector(".help");
@@ -43,6 +48,11 @@ const state = {
   level: null,
   hasLevelKey: false,
   timeLeft: 0,
+  guideMessage: "",
+  questState: {
+    talkedToGuide: false,
+    reachedDoor: false,
+  },
   facing: "down",
   player: {
     x: 0,
@@ -70,6 +80,7 @@ function cloneLevel(index) {
     coins: source.coins.map((entry) => ({ ...entry, taken: false })),
     bonuses: source.bonuses.map((entry) => ({ ...entry, taken: false })),
     enemies: source.enemies.map((entry) => ({ ...entry, dir: 1, startX: entry.x, startY: entry.y })),
+    questSteps: source.questSteps.map((entry) => ({ ...entry })),
   };
 }
 
@@ -139,6 +150,11 @@ function resetLevelProgress() {
   state.levelRelics = 0;
   state.hasLevelKey = false;
   state.timeLeft = state.level.timeLimit;
+  state.questState = {
+    talkedToGuide: false,
+    reachedDoor: false,
+  };
+  state.guideMessage = `Find ${state.level.guideName} to begin the quest.`;
 
   for (const group of [state.level.relics, state.level.coins, state.level.bonuses]) {
     for (const entry of group) {
@@ -168,6 +184,45 @@ function loadLevel(index, keepProgress = true) {
   resetPlayerToStart();
   state.status = state.level.name;
   audio.setMood("calm");
+}
+
+function questSteps() {
+  return [
+    {
+      id: "talk-guide",
+      text: state.level.questSteps.find((step) => step.id === "talk-guide")?.text ?? "Meet the guide.",
+      done: state.questState.talkedToGuide,
+    },
+    {
+      id: "collect-relics",
+      text:
+        state.level.questSteps.find((step) => step.id === "collect-relics")?.text ??
+        `Recover ${state.level.requiredRelics} relics.`,
+      done: state.levelRelics >= state.level.requiredRelics,
+    },
+    {
+      id: "open-chest",
+      text: state.level.questSteps.find((step) => step.id === "open-chest")?.text ?? "Open the chest.",
+      done: state.hasLevelKey,
+    },
+    {
+      id: "reach-door",
+      text: state.level.questSteps.find((step) => step.id === "reach-door")?.text ?? "Reach the exit gate.",
+      done: state.questState.reachedDoor,
+    },
+  ];
+}
+
+function updateQuestLog() {
+  if (!hud.questList) return;
+  const steps = questSteps();
+  hud.questList.innerHTML = "";
+  for (const step of steps) {
+    const item = document.createElement("li");
+    item.textContent = step.text;
+    if (step.done) item.className = "done";
+    hud.questList.appendChild(item);
+  }
 }
 
 function damagePlayer(reason, fullReset = false) {
@@ -301,8 +356,25 @@ function collectBonus(item) {
   }
 }
 
+function updateGuideInteraction(playerBox) {
+  for (const character of state.level.npcs) {
+    if (character.kind !== state.level.guideNpc) continue;
+    const box = { x: character.x * TILE, y: character.y * TILE, w: 18, h: 18 };
+    if (!intersects(playerBox, box)) continue;
+
+    state.guideMessage = character.message;
+    if (!state.questState.talkedToGuide) {
+      state.questState.talkedToGuide = true;
+      state.status = `${state.level.guideName} briefed you.`;
+      state.score += 20;
+    }
+    return;
+  }
+}
+
 function updateInteractions() {
   const playerBox = { x: state.player.x, y: state.player.y, w: state.player.w, h: state.player.h };
+  updateGuideInteraction(playerBox);
 
   for (const coin of state.level.coins) {
     if (coin.taken) continue;
@@ -322,6 +394,10 @@ function updateInteractions() {
     state.totalRelics += 1;
     state.score += 70;
     state.status = `Relics ${state.levelRelics}/${state.level.requiredRelics}`;
+    state.guideMessage =
+      state.levelRelics >= state.level.requiredRelics
+        ? "All relics recovered. Head for the chest."
+        : `Keep searching. ${state.level.requiredRelics - state.levelRelics} relics remain.`;
     audio.relic();
   }
 
@@ -338,6 +414,7 @@ function updateInteractions() {
       state.hasLevelKey = true;
       state.score += 100;
       state.status = "Chest opened. The key is yours.";
+      state.guideMessage = "The gate is ready. Take the key to the exit door.";
       audio.key();
     }
   }
@@ -352,18 +429,22 @@ function updateInteractions() {
       state.levelRelics < state.level.requiredRelics
         ? `Find ${state.level.requiredRelics - state.levelRelics} more relic(s).`
         : "Open the chest to claim the key.";
+    state.guideMessage = state.status;
     return;
   }
 
   audio.portal();
   if (state.levelIndex === LEVELS.length - 1) {
+    state.questState.reachedDoor = true;
     state.gameWon = true;
     state.status = `The kingdom is saved. Score ${state.score}`;
+    state.guideMessage = "Every quest is complete.";
     audio.setMood("triumph");
     audio.win();
     return;
   }
 
+  state.questState.reachedDoor = true;
   loadLevel(state.levelIndex + 1, true);
 }
 
@@ -534,12 +615,17 @@ function render(time) {
   drawUi();
 
   hud.level.textContent = String(state.levelIndex + 1);
+  hud.region.textContent = state.level.name;
+  hud.questTitle.textContent = state.level.questTitle;
+  hud.guide.textContent = state.level.guideName;
   hud.lives.textContent = String(state.lives);
   hud.relics.textContent = `${state.levelRelics}/${state.level.requiredRelics}`;
   hud.coins.textContent = String(state.totalCoins);
   hud.time.textContent = String(Math.ceil(Math.max(0, state.timeLeft)));
   hud.status.textContent = state.status;
   hud.objective.textContent = state.level.objective;
+  hud.guideNote.textContent = state.guideMessage;
+  updateQuestLog();
 }
 
 function gameLoop(time) {

@@ -56,8 +56,21 @@ h1 {
   font-size: 0.86rem;
 }
 
+.storybar,
+.quests {
+  display: grid;
+  gap: 0.48rem;
+}
+
+.storybar {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-top: 0.75rem;
+}
+
 .hud p,
-.objective {
+.objective,
+.storybar p,
+.quest-box {
   margin: 0;
   padding: 0.38rem 0.44rem;
   border: 2px solid #375777;
@@ -67,6 +80,37 @@ h1 {
 .objective {
   margin-bottom: 0.7rem;
   font-size: 0.82rem;
+}
+
+.quests {
+  grid-template-columns: 1.2fr 1fr;
+  margin-bottom: 0.7rem;
+}
+
+.quest-box h2 {
+  margin: 0 0 0.35rem;
+  font-size: 0.76rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #8fdcff;
+}
+
+.quest-list {
+  margin: 0;
+  padding-left: 1rem;
+  font-size: 0.8rem;
+  line-height: 1.35;
+}
+
+.quest-list li.done {
+  color: #7ddc7d;
+}
+
+.guide-note {
+  margin: 0;
+  font-size: 0.8rem;
+  line-height: 1.35;
+  color: #d9e7f2;
 }
 
 canvas {
@@ -104,12 +148,18 @@ button:disabled {
 }
 
 @media (max-width: 840px) {
+  .storybar,
   .hud {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .quests {
+    grid-template-columns: 1fr;
   }
 }
 
 @media (max-width: 580px) {
+  .storybar,
   .hud {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }

@@ -11,6 +11,11 @@
       <header class="topbar">
         <h1>Pixel Game</h1>
       </header>
+      <section class="storybar" aria-label="Story">
+        <p>Region <span id="hud-region">Oakheart Village</span></p>
+        <p>Quest <span id="hud-quest-title">The Elder's Request</span></p>
+        <p>Guide <span id="hud-guide">Elder</span></p>
+      </section>
       <section class="hud" aria-label="Game status">
         <p>Level <span id="hud-level">1</span>/3</p>
         <p>Lives <span id="hud-lives">3</span></p>
@@ -20,9 +25,19 @@
         <p>Status <span id="hud-status">Explore</span></p>
       </section>
       <p class="objective">Objective: <span id="hud-objective">Gather relics, open the chest, and unlock the gate.</span></p>
+      <section class="quests" aria-label="Quest log">
+        <div class="quest-box">
+          <h2>Quest Log</h2>
+          <ul id="quest-list" class="quest-list"></ul>
+        </div>
+        <div class="quest-box">
+          <h2>Guide Note</h2>
+          <p id="hud-guide-note" class="guide-note">Find the guide and hear the opening task.</p>
+        </div>
+      </section>
       <canvas id="game" width="640" height="360" aria-label="Pixel game canvas"></canvas>
       <p class="help">Move: WASD or Arrow Keys. Gather relics, open the chest, and unlock the next gate.</p>
     </main>
-    <script type="module" src="./src/main.js?v=20260307tilesfix"></script>
+    <script type="module" src="./src/main.js?v=20260307quests"></script>
   </body>
 </html>
