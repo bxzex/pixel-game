@@ -1,6 +1,6 @@
-import { AudioSystem } from "./audio.js";
-import { LEVELS } from "./levels.js";
-import { ATLAS_URL, TILE, TILE_COLLISION, drawAsset, drawTile } from "./assets.js";
+import { AudioSystem } from "./audio.js?v=20260307questsfix";
+import { LEVELS } from "./levels.js?v=20260307questsfix";
+import { ATLAS_URL, TILE, TILE_COLLISION, drawAsset, drawTile } from "./assets.js?v=20260307questsfix";
 
 const canvas = document.querySelector("#game");
 const ctx = canvas.getContext("2d");
@@ -80,7 +80,7 @@ function cloneLevel(index) {
     coins: source.coins.map((entry) => ({ ...entry, taken: false })),
     bonuses: source.bonuses.map((entry) => ({ ...entry, taken: false })),
     enemies: source.enemies.map((entry) => ({ ...entry, dir: 1, startX: entry.x, startY: entry.y })),
-    questSteps: source.questSteps.map((entry) => ({ ...entry })),
+    questSteps: (source.questSteps ?? []).map((entry) => ({ ...entry })),
   };
 }
 
