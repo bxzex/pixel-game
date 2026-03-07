@@ -1,6 +1,6 @@
-import { AudioSystem } from "./audio.js?v=20260307questsfix";
-import { LEVELS } from "./levels.js?v=20260307questsfix";
-import { ATLAS_URL, TILE, TILE_COLLISION, drawAsset, drawTile } from "./assets.js?v=20260307questsfix";
+import { AudioSystem } from "./audio.js?v=20260307clean";
+import { LEVELS } from "./levels.js?v=20260307clean";
+import { ATLAS_URL, TILE, TILE_COLLISION, drawAsset, drawTile } from "./assets.js?v=20260307clean";
 
 const canvas = document.querySelector("#game");
 const ctx = canvas.getContext("2d");

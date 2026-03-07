@@ -28,6 +28,7 @@ export const TILE_TYPES = {
 };
 
 export const TILE_COLLISION = new Set([TILE_TYPES.WATER, TILE_TYPES.BRICK]);
+const processedFrameCache = new Map();
 
 const ASSETS = {
   heroFront: [cell(3, 0, 12)],
@@ -173,6 +174,177 @@ function drawFallback(ctx, name, x, y, width, height) {
   ctx.fillRect(x + 2, y + 2, Math.max(4, width - 4), Math.max(4, height - 4));
 }
 
+function colorDistance(a, b) {
+  return Math.abs(a[0] - b[0]) + Math.abs(a[1] - b[1]) + Math.abs(a[2] - b[2]);
+}
+
+function backgroundSample(data, width, height) {
+  const samples = [];
+  for (let x = 0; x < width; x += 1) {
+    const top = (x * 4);
+    const bottom = ((height - 1) * width + x) * 4;
+    samples.push([data[top], data[top + 1], data[top + 2]]);
+    samples.push([data[bottom], data[bottom + 1], data[bottom + 2]]);
+  }
+  for (let y = 1; y < height - 1; y += 1) {
+    const left = (y * width) * 4;
+    const right = (y * width + (width - 1)) * 4;
+    samples.push([data[left], data[left + 1], data[left + 2]]);
+    samples.push([data[right], data[right + 1], data[right + 2]]);
+  }
+
+  const avg = samples.reduce((acc, value) => {
+    acc[0] += value[0];
+    acc[1] += value[1];
+    acc[2] += value[2];
+    return acc;
+  }, [0, 0, 0]);
+
+  return avg.map((value) => Math.round(value / samples.length));
+}
+
+function removeBackdrop(imageData, width, height) {
+  const data = imageData.data;
+  const bg = backgroundSample(data, width, height);
+  const queue = [];
+  const visited = new Uint8Array(width * height);
+  const threshold = 72;
+
+  function tryQueue(x, y) {
+    if (x < 0 || y < 0 || x >= width || y >= height) return;
+    const index = y * width + x;
+    if (visited[index]) return;
+    visited[index] = 1;
+    const offset = index * 4;
+    const color = [data[offset], data[offset + 1], data[offset + 2]];
+    const brightness = color[0] + color[1] + color[2];
+    if (brightness < 320 && colorDistance(color, bg) < threshold) {
+      queue.push(index);
+    }
+  }
+
+  for (let x = 0; x < width; x += 1) {
+    tryQueue(x, 0);
+    tryQueue(x, height - 1);
+  }
+  for (let y = 0; y < height; y += 1) {
+    tryQueue(0, y);
+    tryQueue(width - 1, y);
+  }
+
+  while (queue.length) {
+    const index = queue.pop();
+    const offset = index * 4;
+    data[offset + 3] = 0;
+    const x = index % width;
+    const y = Math.floor(index / width);
+    tryQueue(x + 1, y);
+    tryQueue(x - 1, y);
+    tryQueue(x, y + 1);
+    tryQueue(x, y - 1);
+  }
+}
+
+function keepMainComponents(imageData, width, height) {
+  const data = imageData.data;
+  const visited = new Uint8Array(width * height);
+  const components = [];
+
+  for (let index = 0; index < width * height; index += 1) {
+    if (visited[index]) continue;
+    visited[index] = 1;
+    if (data[index * 4 + 3] === 0) continue;
+
+    const stack = [index];
+    const pixels = [];
+    while (stack.length) {
+      const current = stack.pop();
+      pixels.push(current);
+      const x = current % width;
+      const y = Math.floor(current / width);
+      const neighbors = [current - 1, current + 1, current - width, current + width];
+
+      for (const next of neighbors) {
+        if (next < 0 || next >= width * height) continue;
+        const nx = next % width;
+        const ny = Math.floor(next / width);
+        if (Math.abs(nx - x) + Math.abs(ny - y) !== 1) continue;
+        if (visited[next]) continue;
+        visited[next] = 1;
+        if (data[next * 4 + 3] === 0) continue;
+        stack.push(next);
+      }
+    }
+    components.push(pixels);
+  }
+
+  if (!components.length) return;
+  const largest = Math.max(...components.map((entry) => entry.length));
+  for (const pixels of components) {
+    if (pixels.length >= Math.max(40, largest * 0.08)) continue;
+    for (const index of pixels) {
+      data[index * 4 + 3] = 0;
+    }
+  }
+}
+
+function cropOpaqueBounds(imageData, width, height) {
+  const data = imageData.data;
+  let minX = width;
+  let minY = height;
+  let maxX = -1;
+  let maxY = -1;
+
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      if (data[(y * width + x) * 4 + 3] === 0) continue;
+      minX = Math.min(minX, x);
+      minY = Math.min(minY, y);
+      maxX = Math.max(maxX, x);
+      maxY = Math.max(maxY, y);
+    }
+  }
+
+  if (maxX < minX || maxY < minY) {
+    return { x: 0, y: 0, w: width, h: height };
+  }
+
+  return {
+    x: minX,
+    y: minY,
+    w: maxX - minX + 1,
+    h: maxY - minY + 1,
+  };
+}
+
+function processedFrame(atlas, key, source) {
+  const cacheKey = `${key}:${source.x}:${source.y}:${source.w}:${source.h}`;
+  if (processedFrameCache.has(cacheKey)) {
+    return processedFrameCache.get(cacheKey);
+  }
+
+  const canvas = document.createElement("canvas");
+  canvas.width = source.w;
+  canvas.height = source.h;
+  const frameCtx = canvas.getContext("2d", { willReadFrequently: true });
+  frameCtx.drawImage(atlas, source.x, source.y, source.w, source.h, 0, 0, source.w, source.h);
+
+  const imageData = frameCtx.getImageData(0, 0, source.w, source.h);
+  removeBackdrop(imageData, source.w, source.h);
+  keepMainComponents(imageData, source.w, source.h);
+  frameCtx.putImageData(imageData, 0, 0);
+
+  const bounds = cropOpaqueBounds(imageData, source.w, source.h);
+  const trimmed = document.createElement("canvas");
+  trimmed.width = bounds.w;
+  trimmed.height = bounds.h;
+  const trimmedCtx = trimmed.getContext("2d");
+  trimmedCtx.drawImage(canvas, bounds.x, bounds.y, bounds.w, bounds.h, 0, 0, bounds.w, bounds.h);
+
+  processedFrameCache.set(cacheKey, trimmed);
+  return trimmed;
+}
+
 export function drawAsset(ctx, atlas, name, x, y, options = {}) {
   const frames = ASSETS[name];
   const width = options.width ?? 32;
@@ -187,6 +359,7 @@ export function drawAsset(ctx, atlas, name, x, y, options = {}) {
 
   const frameIndex = options.frameIndex ?? 0;
   const source = frames[Math.abs(frameIndex) % frames.length];
+  const frame = processedFrame(atlas, name, source);
 
   ctx.save();
   ctx.globalAlpha = alpha;
@@ -198,7 +371,7 @@ export function drawAsset(ctx, atlas, name, x, y, options = {}) {
     y = 0;
   }
 
-  ctx.drawImage(atlas, source.x, source.y, source.w, source.h, x, y, width, height);
+  ctx.drawImage(frame, x, y, width, height);
   ctx.restore();
 }
 
