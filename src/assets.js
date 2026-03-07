@@ -1,5 +1,6 @@
 export const TILE = 16;
 export const ATLAS_URL = "./assets/fantasy-atlas.png";
+export const NEW_ATLAS_URL = "./assets/new-spritesheet.png";
 
 const CELL = 128;
 

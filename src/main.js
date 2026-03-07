@@ -1,6 +1,7 @@
 import { AudioSystem } from "./audio.js?v=20260307clean";
 import { LEVELS } from "./levels.js?v=20260307clean";
-import { ATLAS_URL, TILE, TILE_COLLISION, drawAsset, drawTile } from "./assets.js?v=20260307clean";
+import { ATLAS_URL, NEW_ATLAS_URL, TILE, TILE_COLLISION, drawAsset, drawTile } from "./assets.js?v=20260307clean";
+import { createExplosion, updateParticles, drawParticles } from "./effects.js";
 
 const canvas = document.querySelector("#game");
 const ctx = canvas.getContext("2d");
@@ -9,14 +10,12 @@ ctx.imageSmoothingEnabled = false;
 const hud = {
   level: document.querySelector("#hud-level"),
   region: document.querySelector("#hud-region"),
-  questTitle: document.querySelector("#hud-quest-title"),
   guide: document.querySelector("#hud-guide"),
   lives: document.querySelector("#hud-lives"),
   relics: document.querySelector("#hud-relics"),
   coins: document.querySelector("#hud-coins"),
   time: document.querySelector("#hud-time"),
   status: document.querySelector("#hud-status"),
-  objective: document.querySelector("#hud-objective"),
   guideNote: document.querySelector("#hud-guide-note"),
   questList: document.querySelector("#quest-list"),
 };
@@ -29,6 +28,11 @@ if (help) {
 const audio = new AudioSystem();
 const atlas = new Image();
 atlas.src = ATLAS_URL;
+
+const newAtlas = new Image();
+newAtlas.src = NEW_ATLAS_URL;
+let useNewAtlas = false;
+newAtlas.onload = () => { useNewAtlas = true; };
 
 const keys = new Set();
 const moveSpeed = 92;
@@ -155,6 +159,7 @@ function resetLevelProgress() {
     reachedDoor: false,
   };
   state.guideMessage = `Find ${state.level.guideName} to begin the quest.`;
+  particles.length = 0; // Clear particles on reset
 
   for (const group of [state.level.relics, state.level.coins, state.level.bonuses]) {
     for (const entry of group) {
@@ -231,6 +236,7 @@ function damagePlayer(reason, fullReset = false) {
   state.lives -= 1;
   state.status = reason;
   audio.hit();
+  createExplosion(state.player.x + state.player.w/2, state.player.y + state.player.h/2, 15, "#ef4444");
 
   if (state.lives <= 0) {
     state.lives = 3;
@@ -384,6 +390,7 @@ function updateInteractions() {
     state.totalCoins += 1;
     state.score += coin.kind === "coinSilver" ? 10 : 20;
     audio.coin();
+    createExplosion(coin.x * TILE + TILE/2, coin.y * TILE + TILE/2, 8, "#fbbf24");
   }
 
   for (const relic of state.level.relics) {
@@ -399,6 +406,7 @@ function updateInteractions() {
         ? "All relics recovered. Head for the chest."
         : `Keep searching. ${state.level.requiredRelics - state.levelRelics} relics remain.`;
     audio.relic();
+    createExplosion(relic.x * TILE + TILE/2, relic.y * TILE + TILE/2, 12, "#a78bfa");
   }
 
   for (const bonus of state.level.bonuses) {
@@ -406,6 +414,7 @@ function updateInteractions() {
     if (!intersects(playerBox, objectBox(bonus.x, bonus.y))) continue;
     bonus.taken = true;
     collectBonus(bonus);
+    createExplosion(bonus.x * TILE + TILE/2, bonus.y * TILE + TILE/2, 10, "#4ade80");
   }
 
   if (!state.hasLevelKey && state.levelRelics >= state.level.requiredRelics) {
@@ -416,6 +425,7 @@ function updateInteractions() {
       state.status = "Chest opened. The key is yours.";
       state.guideMessage = "The gate is ready. Take the key to the exit door.";
       audio.key();
+      createExplosion(state.level.chest.x * TILE + 10, state.level.chest.y * TILE + 10, 15, "#fbbf24");
     }
   }
 
@@ -504,9 +514,10 @@ function drawMap(time) {
 }
 
 function drawProps(layer, time) {
+  const currentAtlas = useNewAtlas ? newAtlas : atlas;
   for (const item of state.level.props) {
     if ((item.layer ?? "back") !== layer) continue;
-    drawAsset(ctx, atlas, item.name, item.x * TILE - state.cameraX, item.y * TILE - state.cameraY, {
+    drawAsset(ctx, currentAtlas, item.name, item.x * TILE - state.cameraX, item.y * TILE - state.cameraY, {
       width: item.width * TILE,
       height: item.height * TILE,
       flipX: item.flipX,
@@ -516,8 +527,9 @@ function drawProps(layer, time) {
 }
 
 function drawCharacters(time) {
+  const currentAtlas = useNewAtlas ? newAtlas : atlas;
   for (const npc of state.level.npcs) {
-    drawAsset(ctx, atlas, npc.kind, npc.x * TILE - state.cameraX - 6, npc.y * TILE - state.cameraY - 10, {
+    drawAsset(ctx, currentAtlas, npc.kind, npc.x * TILE - state.cameraX - 6, npc.y * TILE - state.cameraY - 10, {
       width: npc.kind === "cat" ? 24 : 30,
       height: npc.kind === "cat" ? 20 : 30,
       frameIndex: Math.floor(time / 400),
@@ -525,7 +537,7 @@ function drawCharacters(time) {
   }
 
   for (const enemy of state.level.enemies) {
-    drawAsset(ctx, atlas, enemy.kind, enemy.x * TILE - state.cameraX - 4, enemy.y * TILE - state.cameraY - 8, {
+    drawAsset(ctx, currentAtlas, enemy.kind, enemy.x * TILE - state.cameraX - 4, enemy.y * TILE - state.cameraY - 8, {
       width: enemy.kind === "bat" ? 30 : 28,
       height: enemy.kind === "bat" ? 24 : 28,
       flipX: enemy.axis === "x" ? enemy.dir < 0 : false,
@@ -542,7 +554,7 @@ function drawCharacters(time) {
   const heroFlip = state.facing === "left";
 
   if (!(state.player.invulnTimer > 0.1 && Math.floor(state.player.invulnTimer * 14) % 2 === 0)) {
-    drawAsset(ctx, atlas, heroAsset, state.player.x - state.cameraX - 8, state.player.y - state.cameraY - 12, {
+    drawAsset(ctx, currentAtlas, heroAsset, state.player.x - state.cameraX - 8, state.player.y - state.cameraY - 12, {
       width: 32,
       height: 32,
       flipX: heroFlip,
@@ -552,11 +564,12 @@ function drawCharacters(time) {
 }
 
 function drawPickups(time) {
+  const currentAtlas = useNewAtlas ? newAtlas : atlas;
   for (const group of [state.level.coins, state.level.bonuses, state.level.relics]) {
     for (const item of group) {
       if (item.taken) continue;
       const bob = Math.sin(time * 0.005 + item.x * 0.4 + item.y * 0.2) * 1.5;
-      drawAsset(ctx, atlas, item.kind, item.x * TILE - state.cameraX - 1, item.y * TILE - state.cameraY - 4 + bob, {
+      drawAsset(ctx, currentAtlas, item.kind, item.x * TILE - state.cameraX - 1, item.y * TILE - state.cameraY - 4 + bob, {
         width: 18,
         height: 18,
         frameIndex: Math.floor(time / 300),
@@ -566,19 +579,19 @@ function drawPickups(time) {
 
   drawAsset(
     ctx,
-    atlas,
+    currentAtlas,
     state.hasLevelKey ? "chestOpen" : "chestClosed",
     state.level.chest.x * TILE - state.cameraX - 2,
     state.level.chest.y * TILE - state.cameraY - 2,
     { width: 22, height: 20 },
   );
 
-  drawAsset(ctx, atlas, state.hasLevelKey ? "keyGold" : "keyDark", state.level.door.x * TILE - state.cameraX, state.level.door.y * TILE - state.cameraY - 10, {
+  drawAsset(ctx, currentAtlas, state.hasLevelKey ? "keyGold" : "keyDark", state.level.door.x * TILE - state.cameraX, state.level.door.y * TILE - state.cameraY - 10, {
     width: 16,
     height: 16,
   });
 
-  drawAsset(ctx, atlas, "door", state.level.door.x * TILE - state.cameraX - 2, state.level.door.y * TILE - state.cameraY, {
+  drawAsset(ctx, currentAtlas, "door", state.level.door.x * TILE - state.cameraX - 2, state.level.door.y * TILE - state.cameraY, {
     width: 24,
     height: 30,
     alpha: state.hasLevelKey ? 1 : 0.8,
@@ -586,8 +599,9 @@ function drawPickups(time) {
 }
 
 function drawUi() {
+  const currentAtlas = useNewAtlas ? newAtlas : atlas;
   for (let i = 0; i < playerMaxLives; i += 1) {
-    drawAsset(ctx, atlas, i < state.lives ? "heart" : "heartEmpty", 10 + i * 16, 8, {
+    drawAsset(ctx, currentAtlas, i < state.lives ? "heart" : "heartEmpty", 10 + i * 16, 8, {
       width: 14,
       height: 14,
       frameIndex: 0,
@@ -610,21 +624,20 @@ function render(time) {
   drawMap(time);
   drawProps("back", time);
   drawPickups(time);
+  drawParticles(ctx, state.cameraX, state.cameraY);
   drawCharacters(time);
   drawProps("front", time);
   drawUi();
 
-  hud.level.textContent = String(state.levelIndex + 1);
-  hud.region.textContent = state.level.name;
-  hud.questTitle.textContent = state.level.questTitle;
-  hud.guide.textContent = state.level.guideName;
-  hud.lives.textContent = String(state.lives);
-  hud.relics.textContent = `${state.levelRelics}/${state.level.requiredRelics}`;
-  hud.coins.textContent = String(state.totalCoins);
-  hud.time.textContent = String(Math.ceil(Math.max(0, state.timeLeft)));
-  hud.status.textContent = state.status;
-  hud.objective.textContent = state.level.objective;
-  hud.guideNote.textContent = state.guideMessage;
+  if (hud.level) hud.level.textContent = String(state.levelIndex + 1);
+  if (hud.region) hud.region.textContent = state.level.name;
+  if (hud.guide) hud.guide.textContent = state.level.guideName;
+  if (hud.lives) hud.lives.textContent = String(state.lives);
+  if (hud.relics) hud.relics.textContent = `${state.levelRelics}/${state.level.requiredRelics}`;
+  if (hud.coins) hud.coins.textContent = String(state.totalCoins);
+  if (hud.time) hud.time.textContent = String(Math.ceil(Math.max(0, state.timeLeft)));
+  if (hud.status) hud.status.textContent = state.status;
+  if (hud.guideNote) hud.guideNote.textContent = state.guideMessage;
   updateQuestLog();
 }
 
@@ -639,6 +652,7 @@ function gameLoop(time) {
     updateInteractions();
     updateTimer(dt);
     updateCamera();
+    updateParticles(dt);
   }
 
   render(time);

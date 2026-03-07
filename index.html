@@ -3,40 +3,42 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Pixel Game</title>
+    <title>PIXEL QUEST PRO</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
     <main class="game-shell">
       <header class="topbar">
-        <h1>Pixel Game</h1>
+        <h1>PIXEL QUEST <span style="color: white; opacity: 0.5;">PRO</span></h1>
+        <div id="hud-status" style="font-size: 0.75rem; color: var(--accent); text-transform: uppercase; font-weight: 700; letter-spacing: 0.1em;">Explore</div>
       </header>
-      <section class="storybar" aria-label="Story">
-        <p>Region <span id="hud-region">Oakheart Village</span></p>
-        <p>Quest <span id="hud-quest-title">The Elder's Request</span></p>
-        <p>Guide <span id="hud-guide">Elder</span></p>
-      </section>
+      
       <section class="hud" aria-label="Game status">
-        <p>Level <span id="hud-level">1</span>/3</p>
-        <p>Lives <span id="hud-lives">3</span></p>
-        <p>Relics <span id="hud-relics">0/0</span></p>
-        <p>Coins <span id="hud-coins">0</span></p>
-        <p>Time <span id="hud-time">0</span>s</p>
-        <p>Status <span id="hud-status">Explore</span></p>
+        <p><span>Region</span> <strong id="hud-region">...</strong></p>
+        <p><span>Level</span> <strong id="hud-level">1</strong></p>
+        <p><span>Lives</span> <strong id="hud-lives">3</strong></p>
+        <p><span>Relics</span> <strong id="hud-relics">0/0</strong></p>
+        <p><span>Coins</span> <strong id="hud-coins">0</strong></p>
+        <p><span>Time</span> <strong id="hud-time">0</strong></p>
       </section>
-      <p class="objective">Objective: <span id="hud-objective">Gather relics, open the chest, and unlock the gate.</span></p>
+
       <section class="quests" aria-label="Quest log">
         <div class="quest-box">
           <h2>Quest Log</h2>
           <ul id="quest-list" class="quest-list"></ul>
         </div>
         <div class="quest-box">
-          <h2>Guide Note</h2>
-          <p id="hud-guide-note" class="guide-note">Find the guide and hear the opening task.</p>
+          <h2>Guide: <span id="hud-guide" style="color: white;">...</span></h2>
+          <p id="hud-guide-note" class="guide-note">...</p>
         </div>
       </section>
+
       <canvas id="game" width="640" height="360" aria-label="Pixel game canvas"></canvas>
-      <p class="help">Move: WASD or Arrow Keys. Gather relics, open the chest, and unlock the next gate.</p>
+      
+      <p class="help">Move: WASD or Arrow Keys. Gather relics, open the chest, and unlock the gate.</p>
     </main>
     <script type="module" src="./src/main.js?v=20260307clean"></script>
   </body>
