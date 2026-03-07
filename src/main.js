@@ -21,7 +21,6 @@ if (help) {
   help.textContent = "Move: WASD or Arrow Keys. Collect relics, open the chest for the key, then unlock the door.";
 }
 
-const audioButton = document.querySelector("#audio-button");
 const audio = new AudioSystem();
 const atlas = new Image();
 atlas.src = ATLAS_URL;
@@ -40,6 +39,7 @@ const state = {
   lives: 3,
   status: "Explore",
   gameWon: false,
+  audioReady: false,
   level: null,
   hasLevelKey: false,
   timeLeft: 0,
@@ -559,7 +559,16 @@ function gameLoop(time) {
   requestAnimationFrame(gameLoop);
 }
 
+function enableAudioOnce() {
+  if (state.audioReady) return;
+  state.audioReady = true;
+  audio.enable().catch(() => {
+    state.audioReady = false;
+  });
+}
+
 document.addEventListener("keydown", (event) => {
+  enableAudioOnce();
   keys.add(event.key.toLowerCase());
 });
 
@@ -567,11 +576,7 @@ document.addEventListener("keyup", (event) => {
   keys.delete(event.key.toLowerCase());
 });
 
-audioButton.addEventListener("click", async () => {
-  await audio.enable();
-  audioButton.textContent = "Audio On";
-  audioButton.disabled = true;
-});
+document.addEventListener("pointerdown", enableAudioOnce, { passive: true });
 
 loadLevel(0, false);
 requestAnimationFrame(gameLoop);
