@@ -1,37 +1,13 @@
-# Pixel Game
+# Pixel Quest
 
-A pixel-art 2D platform adventure built with plain JavaScript and Canvas.
+A little pixel art platformer with three levels, coins, relics and a portal at the end of each one.
 
-Live site:
-- [https://bxzex.github.io/pixel-game/](https://bxzex.github.io/pixel-game/)
+Play: https://bxzex.github.io/pixel-game/
 
-Includes:
-- Custom pixel assets (player, enemies, coins, relics, portal, tiles)
-- Chiptune-style background music and game sound effects
-- Three handcrafted levels with progression and objectives
+I drew the sprites and wrote the chiptune music and sound effects. It's plain JavaScript on a canvas.
 
-## Controls
+Move with A and D or the arrow keys. Jump with W, up or space. Click Enable Audio if you want the music.
 
-- Move: `A` / `D` or `Arrow Left` / `Arrow Right`
-- Jump: `W`, `Arrow Up`, or `Space`
+`npm run dev` runs it locally and `npm test` runs the tests. Every push to main deploys to Pages through GitHub Actions.
 
-Click **Enable Audio** to start music and effects.
-
-## GitHub Pages
-
-This repo deploys automatically to GitHub Pages on every push to `main` using:
-- `.github/workflows/deploy-pages.yml`
-
-In GitHub, set Pages source to **GitHub Actions** for the site to go live.
-
-## Local Dev
-
-```bash
-npm run dev
-```
-
-## Test
-
-```bash
-npm test
-```
+Made by [bxzex](https://bxzex.com).
