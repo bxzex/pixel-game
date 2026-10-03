@@ -1,6 +1,6 @@
-import { AudioSystem } from "./audio.js?v=20260307clean";
-import { LEVELS } from "./levels.js?v=20260307clean";
-import { ATLAS_URL, TILE, TILE_COLLISION, drawAsset, drawTile } from "./assets.js?v=20260307clean";
+import { AudioSystem } from "./audio.js?v=20261003";
+import { LEVELS } from "./levels.js?v=20261003";
+import { ATLAS_URL, TILE, TILE_COLLISION, drawAsset, drawTile } from "./assets.js?v=20261003";
 import { createExplosion, updateParticles, drawParticles, particles } from "./effects.js";
 
 const canvas = document.querySelector("#game");
@@ -74,7 +74,10 @@ if (startBtn) {
 const creditsBtn = document.querySelector("#credits-btn");
 if (creditsBtn) {
   creditsBtn.addEventListener("click", () => {
-    alert("Pixel Quest - Created by bxzex");
+    const credits = document.querySelector("#credits");
+    if (!credits) return;
+    credits.hidden = !credits.hidden;
+    creditsBtn.setAttribute("aria-expanded", String(!credits.hidden));
   });
 }
 
@@ -573,7 +576,7 @@ function drawPickups(time) {
     for (const item of group) {
       if (item.taken) continue;
       const bob = Math.sin(time * 0.005 + item.x * 0.4 + item.y * 0.2) * 1.5;
-      drawAsset(ctx, currentAtlas, item.kind, item.x * TILE - state.cameraX - 1, item.y * TILE - state.cameraY - 4 + bob, {
+      drawAsset(ctx, atlas, item.kind, item.x * TILE - state.cameraX - 1, item.y * TILE - state.cameraY - 4 + bob, {
         width: 18,
         height: 18,
         frameIndex: Math.floor(time / 300),
@@ -583,19 +586,19 @@ function drawPickups(time) {
 
   drawAsset(
     ctx,
-    currentAtlas,
+    atlas,
     state.hasLevelKey ? "chestOpen" : "chestClosed",
     state.level.chest.x * TILE - state.cameraX - 2,
     state.level.chest.y * TILE - state.cameraY - 2,
     { width: 22, height: 20 },
   );
 
-  drawAsset(ctx, currentAtlas, state.hasLevelKey ? "keyGold" : "keyDark", state.level.door.x * TILE - state.cameraX, state.level.door.y * TILE - state.cameraY - 10, {
+  drawAsset(ctx, atlas, state.hasLevelKey ? "keyGold" : "keyDark", state.level.door.x * TILE - state.cameraX, state.level.door.y * TILE - state.cameraY - 10, {
     width: 16,
     height: 16,
   });
 
-  drawAsset(ctx, currentAtlas, "door", state.level.door.x * TILE - state.cameraX - 2, state.level.door.y * TILE - state.cameraY, {
+  drawAsset(ctx, atlas, "door", state.level.door.x * TILE - state.cameraX - 2, state.level.door.y * TILE - state.cameraY, {
     width: 24,
     height: 30,
     alpha: state.hasLevelKey ? 1 : 0.8,
@@ -697,7 +700,23 @@ function enableAudioOnce() {
 
 document.addEventListener("keydown", (event) => {
   enableAudioOnce();
-  keys.add(event.key.toLowerCase());
+  const key = event.key.toLowerCase();
+  // Keep the arrow keys from scrolling the page while playing.
+  if (!state.inMenu && key.startsWith("arrow")) event.preventDefault();
+  keys.add(key);
+});
+
+// On-screen pad for touch screens: feeds the same key set as the keyboard.
+document.querySelectorAll(".dpad button").forEach((button) => {
+  const key = button.dataset.key;
+  const release = () => keys.delete(key);
+  button.addEventListener("pointerdown", (event) => {
+    event.preventDefault();
+    keys.add(key);
+  });
+  button.addEventListener("pointerup", release);
+  button.addEventListener("pointerleave", release);
+  button.addEventListener("pointercancel", release);
 });
 
 document.addEventListener("keyup", (event) => {

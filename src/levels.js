@@ -1,4 +1,4 @@
-import { TILE_TYPES } from "./assets.js?v=20260307clean";
+import { TILE_TYPES } from "./assets.js?v=20261003";
 
 function createMap(width, height, fill = TILE_TYPES.GRASS) {
   return Array.from({ length: height }, () => Array(width).fill(fill));

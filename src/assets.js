@@ -1,19 +1,24 @@
 export const TILE = 16;
 export const ATLAS_URL = "./assets/new-spritesheet.png";
 
-const CELL = 128;
-
-function cell(col, row, inset = 10) {
-  return {
-    x: col * CELL + inset,
-    y: row * CELL + inset,
-    w: CELL - inset * 2,
-    h: CELL - inset * 2,
-  };
+// Sprite boxes are measured on new-spritesheet.png (1379 x 752) as left, right, top, bottom.
+// The sheet is not a regular grid, so every sprite gets its own box.
+function box(x0, x1, y0, y1) {
+  const pad = 2;
+  const x = Math.max(0, x0 - pad);
+  const y = Math.max(0, y0 - pad);
+  return { x, y, w: Math.min(1379, x1 + pad) - x, h: Math.min(752, y1 + pad) - y };
 }
 
-function rect(x, y, w, h) {
-  return { x, y, w, h };
+// Terrain block at the top right: 8 columns by 3 rows. Take the middle of a tile so no border shows.
+function terrain(col, row, inset = 8) {
+  const size = 80;
+  return {
+    x: 722 + Math.round(col * 82.85) + inset,
+    y: 3 + row * size + inset,
+    w: size - inset * 2,
+    h: size - inset * 2,
+  };
 }
 
 export const TILE_TYPES = {
@@ -28,86 +33,86 @@ export const TILE_TYPES = {
 };
 
 export const TILE_REGIONS = {
-  [TILE_TYPES.GRASS]: { x: 1024, y: 0, w: 128, h: 128 },
-  [TILE_TYPES.DIRT]: { x: 1280, y: 0, w: 128, h: 128 },
-  [TILE_TYPES.STONE]: { x: 1536, y: 0, w: 128, h: 128 },
-  [TILE_TYPES.WATER]: { x: 1792, y: 0, w: 128, h: 128 },
-  [TILE_TYPES.WOOD]: { x: 1152, y: 512, w: 128, h: 128 },
-  [TILE_TYPES.BRICK]: { x: 1920, y: 0, w: 128, h: 128 },
-  [TILE_TYPES.BRIDGE]: { x: 1152, y: 512, w: 128, h: 128 },
-  [TILE_TYPES.FLOWERS]: { x: 1152, y: 0, w: 128, h: 128 },
+  [TILE_TYPES.GRASS]: terrain(0, 0),
+  [TILE_TYPES.DIRT]: terrain(2, 1, 22),
+  [TILE_TYPES.STONE]: terrain(2, 0),
+  [TILE_TYPES.WATER]: terrain(6, 1, 24),
+  [TILE_TYPES.WOOD]: terrain(3, 2),
+  [TILE_TYPES.BRICK]: terrain(7, 1),
+  [TILE_TYPES.BRIDGE]: terrain(3, 2),
+  [TILE_TYPES.FLOWERS]: terrain(1, 0),
 };
 
 export const TILE_COLLISION = new Set([TILE_TYPES.WATER, TILE_TYPES.BRICK]);
 const processedFrameCache = new Map();
 
 const ASSETS = {
-  heroFront: [cell(0, 0, 12)],
-  heroSide: [cell(2, 0, 12), cell(3, 0, 12)],
-  heroAttack: [cell(6, 0, 12)],
-  heroBack: [cell(1, 0, 12)],
+  heroFront: [box(16, 78, 8, 95)],
+  heroSide: [box(374, 435, 8, 95), box(463, 524, 8, 95)],
+  heroAttack: [box(548, 606, 8, 95)],
+  heroBack: [box(102, 160, 8, 95)],
 
-  elder: [cell(4, 1, 14)],
-  wizard: [cell(0, 1, 14)],
-  witch: [cell(6, 1, 14)],
-  maiden: [cell(2, 2, 14)],
-  villager: [cell(0, 2, 14)],
+  elder: [box(379, 435, 105, 194)],
+  wizard: [box(18, 71, 105, 194)],
+  witch: [box(467, 523, 105, 194)],
+  maiden: [box(553, 604, 105, 194)],
+  villager: [box(21, 68, 210, 291)],
 
-  slime: [cell(0, 3, 14), cell(1, 3, 14)],
-  goblin: [cell(4, 2, 14), cell(2, 3, 14), cell(3, 3, 14)],
-  skeleton: [cell(6, 2, 14), cell(6, 3, 14)],
-  bat: [cell(7, 2, 12), cell(7, 3, 12)],
-  cat: [cell(5, 4, 18)],
+  slime: [box(14, 74, 308, 384), box(104, 157, 308, 384)],
+  goblin: [box(381, 429, 210, 291), box(190, 238, 308, 384), box(274, 340, 308, 384)],
+  skeleton: [box(550, 605, 210, 291), box(549, 617, 308, 384)],
+  bat: [box(620, 705, 210, 291), box(619, 708, 308, 384)],
+  cat: [box(559, 616, 405, 461)],
 
-  chestClosed: [cell(0, 5, 16)],
-  chestOpen: [cell(1, 5, 16)],
-  coinGold: [cell(2, 5, 22)],
-  coinSilver: [cell(3, 5, 22)],
-  potionGold: [cell(5, 5, 22)],
-  keyGold: [cell(6, 5, 20)],
-  potionRed: [cell(0, 6, 22)],
-  potionBlue: [cell(1, 6, 22)],
-  potionGreen: [cell(2, 6, 22)],
-  heart: [cell(3, 6, 22), cell(4, 6, 22)],
-  heartEmpty: [cell(5, 6, 22)],
-  sword: [cell(0, 7, 18)],
-  shield: [cell(1, 7, 18)],
-  keyDark: [cell(2, 7, 20)],
-  lantern: [cell(6, 7, 18), cell(7, 7, 18)],
-  fire: [cell(3, 7, 18)],
-  apple: [cell(0, 8, 18), cell(1, 8, 18)],
-  mushroom: [cell(3, 8, 18), cell(4, 8, 18)],
-  map: [cell(3, 7, 18), cell(4, 7, 18)],
-  compass: [cell(5, 7, 18)],
-  gemPurple: [cell(7, 7, 18)],
-  gemBlue: [cell(6, 7, 18)],
-  door: [cell(7, 7, 12)],
+  chestClosed: [box(75, 133, 472, 537)],
+  chestOpen: [box(2, 64, 472, 537)],
+  coinGold: [box(148, 197, 472, 537)],
+  coinSilver: [box(215, 265, 472, 537)],
+  potionGold: [box(288, 328, 472, 537)],
+  keyGold: [box(415, 470, 472, 537)],
+  potionRed: [box(12, 55, 548, 605)],
+  potionBlue: [box(82, 125, 548, 605)],
+  potionGreen: [box(152, 195, 548, 605)],
+  heart: [box(212, 267, 548, 605), box(281, 335, 548, 605)],
+  heartEmpty: [box(348, 403, 548, 605)],
+  sword: [box(2, 67, 613, 683)],
+  shield: [box(78, 130, 613, 683)],
+  keyDark: [box(416, 468, 548, 605)],
+  lantern: [box(426, 463, 689, 751)],
+  fire: [box(357, 389, 689, 751)],
+  apple: [box(8, 60, 689, 751), box(79, 129, 689, 751)],
+  mushroom: [box(215, 266, 689, 751), box(284, 333, 689, 751)],
+  map: [box(210, 270, 613, 683)],
+  compass: [box(282, 335, 613, 683)],
+  gemPurple: [box(424, 463, 613, 683)],
+  gemBlue: [box(348, 401, 613, 683)],
+  door: [box(485, 541, 613, 683)],
 
-  palmTree: [cell(8, 2, 8)],
-  roundTree: [cell(9, 2, 8)],
-  pineTree: [cell(10, 2, 8)],
-  firTree: [cell(11, 2, 8)],
-  hillTree: [cell(12, 2, 8)],
-  bush: [cell(10, 3, 18)],
-  fence: [cell(14, 3, 10), cell(15, 3, 10)],
-  rockSmall: [cell(8, 4, 18)],
-  rockMedium: [cell(9, 4, 18)],
-  rockLarge: [cell(10, 4, 18)],
-  flowers: [cell(11, 4, 16), cell(12, 4, 16)],
+  palmTree: [box(721, 801, 245, 395)],
+  roundTree: [box(804, 886, 245, 395)],
+  pineTree: [box(891, 962, 245, 336)],
+  firTree: [box(973, 1047, 245, 336)],
+  hillTree: [box(1055, 1137, 245, 395)],
+  bush: [box(891, 962, 346, 393)],
+  fence: [box(1224, 1297, 345, 392), box(1307, 1378, 344, 392)],
+  rockSmall: [box(727, 797, 404, 466)],
+  rockMedium: [box(810, 876, 404, 466)],
+  rockLarge: [box(889, 961, 404, 466)],
+  flowers: [box(979, 1043, 404, 466), box(1062, 1129, 404, 466)],
 
-  houseA: [cell(8, 5, 0), cell(9, 5, 0)],
-  houseB: [cell(10, 5, 0), cell(11, 5, 0)],
-  towerA: [cell(12, 5, 0), cell(12, 6, 0)],
-  towerB: [cell(13, 5, 0), cell(13, 6, 0)],
-  smithy: [cell(14, 5, 0), cell(15, 5, 0)],
-  workshop: [cell(14, 6, 0), cell(15, 6, 0)],
+  houseA: [box(572, 697, 476, 631)],
+  houseB: [box(715, 835, 476, 631)],
+  towerA: [box(863, 961, 476, 631)],
+  towerB: [box(979, 1057, 476, 631)],
+  smithy: [box(1076, 1225, 476, 631)],
+  workshop: [box(1234, 1378, 476, 631)],
 
-  uiBarGreen: [rect(1024, 1024, 256, 128)],
-  uiBarRed: [rect(1280, 1024, 256, 128)],
-  uiIconHeart: [cell(8, 9, 10)],
-  uiIconDrop: [cell(9, 9, 10)],
-  uiIconCoin: [cell(10, 9, 10)],
-  uiIconSwords: [cell(11, 9, 10)],
+  uiBarGreen: [box(572, 716, 645, 691)],
+  uiBarRed: [box(726, 871, 645, 691)],
+  uiIconHeart: [box(575, 625, 701, 749)],
+  uiIconDrop: [box(642, 677, 701, 749)],
+  uiIconCoin: [box(726, 771, 701, 749)],
+  uiIconSwords: [box(786, 833, 701, 749)],
 };
 
 export const ASSET_GROUPS = {
